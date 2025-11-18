@@ -1,0 +1,18 @@
+# Hardhat files
+cache/
+artifacts/
+node_modules/
+
+# Environment
+.env
+.env.local
+
+# Deployment artifacts
+deployment-info.json
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*

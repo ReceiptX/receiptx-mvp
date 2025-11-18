@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { processImageOCR } from "@/lib/ocrService";
 import { supabase } from "@/lib/supabaseClient";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rateLimiter";
+import { SupraClient } from "@/lib/blockchain/supraClient";
+import crypto from "crypto";
 
 export const runtime = "nodejs";
 
@@ -194,6 +196,43 @@ export async function POST(req: NextRequest) {
       console.log("✅ Reward logged to user_rewards:", rewardData[0]);
     }
 
+    // 7. Mint RWT tokens on-chain (if contract deployed and wallet exists)
+    let blockchainTx = null;
+    if (wallet_address && process.env.SUPRA_CONTRACT_ADDRESS) {
+      try {
+        const supraClient = new SupraClient();
+        
+        // Create receipt hash for on-chain fraud prevention
+        const receiptHashBytes = crypto.createHash('sha256')
+          .update(rawText.substring(0, 200))
+          .digest('hex');
+        const receiptHashHex = '0x' + receiptHashBytes;
+        
+        // Check if receipt already used on-chain
+        const isUsed = await supraClient.isReceiptUsed(receiptHashHex);
+        if (isUsed) {
+          console.log("⚠️ Receipt already used on-chain");
+        } else {
+          // Store receipt hash on-chain
+          await supraClient.storeReceiptHash(receiptHashHex);
+          console.log("✅ Receipt hash stored on-chain");
+        }
+        
+        // Mint RWT tokens on Supra
+        const txHash = await supraClient.mintRWT(wallet_address, totalRWT);
+        
+        console.log("✅ RWT tokens minted on Supra blockchain:", txHash);
+        blockchainTx = {
+          txHash: txHash,
+          tokens: totalRWT,
+          explorer: `https://testnet.suprascan.io/tx/${txHash}`
+        };
+      } catch (error: any) {
+        console.error("⚠️ Blockchain minting failed (continuing without):", error.message);
+        // Don't fail the whole request if blockchain fails
+      }
+    }
+
     return NextResponse.json(
       {
         success: true,
@@ -205,6 +244,7 @@ export async function POST(req: NextRequest) {
           total_rwt: totalRWT,
           brand,
         },
+        blockchain: blockchainTx,
       },
       { headers: getRateLimitHeaders(rateLimit) }
     );
