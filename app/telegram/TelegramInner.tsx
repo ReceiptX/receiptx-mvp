@@ -116,7 +116,7 @@ export default function TelegramInner() {
         type="file"
         id="receipt-upload"
         accept="image/*"
-        capture="camera"
+        capture="environment"
         className="hidden"
         onChange={handleImageUpload}
       />
