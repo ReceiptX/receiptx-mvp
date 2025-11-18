@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { WebApp } from '@twa-dev/sdk'
+import { useState, useEffect } from 'react';
+import WebApp from '@twa-dev/sdk';
 
 export default function TelegramInner() {
   // -----------------------------
