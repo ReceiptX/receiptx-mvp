@@ -10,6 +10,7 @@
 [build.environment]
   NODE_VERSION = "20.9.0"
   SECRETS_SCAN_OMIT_PATHS = "DEPLOYMENT_GUIDE.md,NETLIFY_DEPLOY.md,SETUP_SUPABASE_NOW.md,*.md"
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_PRIVY_APP_ID"
 
 # Redirect all requests to Next.js
 [[redirects]]
