@@ -23,10 +23,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           theme: 'dark',
           accentColor: '#00FFFF',
         },
-        embeddedWallets: {
-          createOnLogin: 'users-without-wallets',
-          showWalletUIs: false,
-        },
       }}
     >
       {children}
