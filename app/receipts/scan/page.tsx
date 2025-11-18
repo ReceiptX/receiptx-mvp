@@ -25,8 +25,15 @@ export default function ReceiptScanPage() {
     setResult(null)
 
     try {
+      // Get wallet address from localStorage (set by WalletAutoGenerator)
+      const walletAddress = localStorage.getItem('receiptx_wallet');
+      
       const formData = new FormData()
       formData.append("file", file)
+      
+      if (walletAddress) {
+        formData.append("wallet_address", walletAddress)
+      }
 
       const res = await fetch('/api/ocr/process', {
         method: 'POST',

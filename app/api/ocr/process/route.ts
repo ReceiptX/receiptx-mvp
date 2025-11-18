@@ -29,6 +29,8 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const file = formData.get("file") as File;
     const telegram_id = formData.get("telegram_id") as string;
+    const user_email = formData.get("user_email") as string;
+    const wallet_address = formData.get("wallet_address") as string;
 
     if (!file) {
       return NextResponse.json(
@@ -144,7 +146,9 @@ export async function POST(req: NextRequest) {
         brand,
         amount,
         multiplier,
+        user_email,
         telegram_id,
+        wallet_address,
         image_url,
         metadata: { rawText, receiptHash },
       })
@@ -173,7 +177,9 @@ export async function POST(req: NextRequest) {
     const { data: rewardData, error: rewardError } = await supabase
       .from("user_rewards")
       .insert({
+        user_email,
         telegram_id,
+        wallet_address,
         brand,
         base_amount: baseRWT,
         multiplier,

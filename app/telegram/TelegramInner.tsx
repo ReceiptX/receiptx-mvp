@@ -8,21 +8,46 @@ export default function TelegramInner() {
   // 1. STATE VARIABLES
   // -----------------------------
   const [telegramId, setTelegramId] = useState<string | null>(null)
+  const [walletAddress, setWalletAddress] = useState<string | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
 
   // -----------------------------
-  // 2. TELEGRAM INITIALIZATION
+  // 2. TELEGRAM INITIALIZATION & WALLET GENERATION
   // -----------------------------
   useEffect(() => {
-    try {
-      WebApp.ready()
-      const user = WebApp.initDataUnsafe?.user
-      if (user) {
-        setTelegramId(String(user.id))
+    async function init() {
+      try {
+        WebApp.ready()
+        const user = WebApp.initDataUnsafe?.user
+        if (user) {
+          const userId = String(user.id)
+          setTelegramId(userId)
+          
+          // Auto-generate wallet for Telegram user
+          const walletRes = await fetch('/api/wallet/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              telegram_id: userId,
+              biometrics: {
+                timestamp: Date.now(),
+                platform: 'telegram'
+              }
+            })
+          })
+          
+          const walletData = await walletRes.json()
+          if (walletData.success) {
+            setWalletAddress(walletData.wallet.address)
+            console.log('✅ Wallet generated:', walletData.wallet.address)
+          }
+        }
+      } catch (err) {
+        console.error("Initialization error:", err)
       }
-    } catch (err) {
-      console.error("Telegram SDK error:", err)
     }
+    
+    init()
   }, [])
 
   // -----------------------------
@@ -68,7 +93,7 @@ export default function TelegramInner() {
             multiplier: ocr.multiplier,
             location: ocr.location,
             telegram_id: telegramId,
-            wallet_address: "pending-wallet",
+            wallet_address: walletAddress || "pending-wallet",
             metadata: ocr
           })
         })

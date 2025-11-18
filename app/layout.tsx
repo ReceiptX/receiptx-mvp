@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react'
 import Providers from '../lib/privyProvider'
+import { WalletAutoGenerator } from './components/WalletAutoGenerator'
 import './globals.css'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -29,7 +30,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="bg-[#0B0C10] text-white min-h-screen">
-        <Providers>{children}</Providers>
+        <Providers>
+          <WalletAutoGenerator />
+          {children}
+        </Providers>
       </body>
     </html>
   )
