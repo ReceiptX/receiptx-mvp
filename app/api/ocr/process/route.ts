@@ -11,7 +11,9 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'im
 export async function POST(req: NextRequest) {
   try {
     // Rate limiting by IP
-    const ip = req.ip || req.headers.get('x-forwarded-for') || 'unknown';
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 
+                req.headers.get('x-real-ip') || 
+                'unknown';
     const rateLimit = checkRateLimit(ip, 10, 60 * 1000); // 10 requests per minute
     
     if (!rateLimit.allowed) {
