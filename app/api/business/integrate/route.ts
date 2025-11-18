@@ -9,6 +9,17 @@ const distributor = new TokenDistributor();
 
 export async function POST(req: Request) {
   try {
+    // API Key Authentication
+    const apiKey = req.headers.get('x-api-key');
+    const validApiKey = process.env.BUSINESS_API_KEY;
+
+    if (!apiKey || apiKey !== validApiKey) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized: Invalid or missing API key" },
+        { status: 401 }
+      );
+    }
+
     const event = await req.json();
 
     // 1️⃣ Handle incoming business event

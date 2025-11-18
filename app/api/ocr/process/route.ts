@@ -1,11 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { processImageOCR } from "@/lib/ocrService";
 import { supabase } from "@/lib/supabaseClient";
+import { checkRateLimit, getRateLimitHeaders } from "@/lib/rateLimiter";
 
 export const runtime = "nodejs";
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic'];
+
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting by IP
+    const ip = req.ip || req.headers.get('x-forwarded-for') || 'unknown';
+    const rateLimit = checkRateLimit(ip, 10, 60 * 1000); // 10 requests per minute
+    
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Too many requests. Please try again later." },
+        { 
+          status: 429,
+          headers: getRateLimitHeaders(rateLimit)
+        }
+      );
+    }
+
     const formData = await req.formData();
     const file = formData.get("file") as File;
     const telegram_id = formData.get("telegram_id") as string;
@@ -13,7 +31,23 @@ export async function POST(req: NextRequest) {
     if (!file) {
       return NextResponse.json(
         { success: false, error: "No file uploaded" },
-        { status: 400 }
+        { status: 400, headers: getRateLimitHeaders(rateLimit) }
+      );
+    }
+
+    // Validate file type
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return NextResponse.json(
+        { success: false, error: "Invalid file type. Only images (JPEG, PNG, WebP, HEIC) are allowed." },
+        { status: 400, headers: getRateLimitHeaders(rateLimit) }
+      );
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { success: false, error: "File too large. Maximum size is 10MB." },
+        { status: 400, headers: getRateLimitHeaders(rateLimit) }
       );
     }
 
@@ -152,17 +186,20 @@ export async function POST(req: NextRequest) {
       console.log("✅ Reward logged to user_rewards:", rewardData[0]);
     }
 
-    return NextResponse.json({
-      success: true,
-      data: insertData[0],
-      ocr_text: rawText,
-      reward: {
-        base_rwt: baseRWT,
-        multiplier,
-        total_rwt: totalRWT,
-        brand,
+    return NextResponse.json(
+      {
+        success: true,
+        data: insertData[0],
+        ocr_text: rawText,
+        reward: {
+          base_rwt: baseRWT,
+          multiplier,
+          total_rwt: totalRWT,
+          brand,
+        },
       },
-    });
+      { headers: getRateLimitHeaders(rateLimit) }
+    );
   } catch (err: any) {
     return NextResponse.json(
       { success: false, error: err.message },
