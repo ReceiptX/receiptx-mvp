@@ -1,11 +1,23 @@
 import { NextResponse } from "next/server";
-import { DropifyBusinessAPI } from "@/lib/proprietary/businessAPI";
-import { Web2Web3Bridge } from "@/lib/proprietary/web2web3Bridge";
-import { TokenDistributor } from "@/lib/proprietary/tokenDistributor";
 
-const api = new DropifyBusinessAPI();
-const bridge = new Web2Web3Bridge();
-const distributor = new TokenDistributor();
+// Optional proprietary integrations (only if files exist locally)
+let DropifyBusinessAPI: any = null;
+let Web2Web3Bridge: any = null;
+let TokenDistributor: any = null;
+let api: any = null;
+let bridge: any = null;
+let distributor: any = null;
+
+try {
+  DropifyBusinessAPI = require("@/lib/proprietary/businessAPI").DropifyBusinessAPI;
+  Web2Web3Bridge = require("@/lib/proprietary/web2web3Bridge").Web2Web3Bridge;
+  TokenDistributor = require("@/lib/proprietary/tokenDistributor").TokenDistributor;
+  api = new DropifyBusinessAPI();
+  bridge = new Web2Web3Bridge();
+  distributor = new TokenDistributor();
+} catch (e) {
+  console.log("ℹ️ Business integration disabled (proprietary modules not found)");
+}
 
 export async function POST(req: Request) {
   try {
@@ -21,6 +33,14 @@ export async function POST(req: Request) {
     }
 
     const event = await req.json();
+
+    // Check if proprietary modules are available
+    if (!api || !bridge || !distributor) {
+      return NextResponse.json(
+        { success: false, error: "Business integration not available in this deployment" },
+        { status: 503 }
+      );
+    }
 
     // 1️⃣ Handle incoming business event
     await api.handleBusinessEvent(event);

@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
-import { SeamlessWalletGenerator } from '@/lib/seamlessWalletGenerator';
 import { supabase } from '@/lib/supabaseClient';
+
+// Optional wallet generation (only if proprietary module exists)
+let SeamlessWalletGenerator: any = null;
+try {
+  SeamlessWalletGenerator = require('@/lib/seamlessWalletGenerator').SeamlessWalletGenerator;
+} catch (e) {
+  console.log("ℹ️ Seamless wallet generation disabled (module not found)");
+}
 
 export async function POST(req: Request) {
   try {
@@ -40,6 +47,14 @@ export async function POST(req: Request) {
           exists: true
         }
       });
+    }
+
+    // Check if wallet generator is available
+    if (!SeamlessWalletGenerator) {
+      return NextResponse.json(
+        { success: false, error: 'Wallet generation not available in this deployment' },
+        { status: 503 }
+      );
     }
 
     // Generate new wallet using proprietary tech

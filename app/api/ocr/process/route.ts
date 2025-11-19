@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { processImageOCR } from "@/lib/ocrService";
 import { supabase } from "@/lib/supabaseClient";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rateLimiter";
-import { SupraClient } from "@/lib/blockchain/supraClient";
 import crypto from "crypto";
+
+// Optional blockchain integration (only if files exist locally)
+let SupraClient: any = null;
+try {
+  SupraClient = require("@/lib/blockchain/supraClient").SupraClient;
+} catch (e) {
+  console.log("ℹ️ Blockchain integration disabled (supraClient not found)");
+}
 
 export const runtime = "nodejs";
 
@@ -198,7 +205,7 @@ export async function POST(req: NextRequest) {
 
     // 7. Mint RWT tokens on-chain (if contract deployed and wallet exists)
     let blockchainTx = null;
-    if (wallet_address && process.env.SUPRA_CONTRACT_ADDRESS) {
+    if (wallet_address && process.env.SUPRA_CONTRACT_ADDRESS && SupraClient) {
       try {
         const supraClient = new SupraClient();
         
