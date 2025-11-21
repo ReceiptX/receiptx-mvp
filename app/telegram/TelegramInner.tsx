@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import WebApp from '@twa-dev/sdk';
+import './telegram.css';
 
 export default function TelegramInner() {
   // -----------------------------
@@ -18,6 +19,11 @@ export default function TelegramInner() {
     async function init() {
       try {
         WebApp.ready()
+        
+        // Force ReceiptX dark theme (override Telegram's theme)
+        WebApp.setHeaderColor('#0B0C10') // Dark header to match web app
+        WebApp.setBackgroundColor('#0B0C10') // Dark background
+        
         const user = WebApp.initDataUnsafe?.user
         if (user) {
           const userId = String(user.id)
@@ -125,14 +131,30 @@ export default function TelegramInner() {
   // 4. UI RENDER
   // -----------------------------
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center text-center p-10">
-      <h1 className="text-cyan-400 text-2xl font-bold mb-6">
-        ReceiptX Rewards
-      </h1>
+    <main className="telegram-main min-h-screen flex flex-col items-center justify-center text-center p-10">
+
+      {/* ReceiptX Branding */}
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold mb-2">
+          <span className="text-cyan-400">Receipt</span>
+          <span className="text-white">X</span>
+        </h1>
+        <p className="text-gray-400 text-sm">Scan receipts, earn rewards</p>
+      </div>
+
+      {/* Wallet Status */}
+      {walletAddress && (
+        <div className="mb-6 p-4 bg-[#1F2833] rounded-lg border border-cyan-400/20">
+          <p className="text-xs text-gray-400 mb-1">Your Wallet</p>
+          <p className="text-cyan-400 font-mono text-xs">
+            {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+          </p>
+        </div>
+      )}
 
       {loading && (
         <p className="text-gray-400 animate-pulse mb-6">
-          Processing receipt...
+          🔍 Processing receipt...
         </p>
       )}
 
@@ -141,18 +163,24 @@ export default function TelegramInner() {
         type="file"
         id="receipt-upload"
         accept="image/*"
-        capture="environment"
         className="hidden"
         onChange={handleImageUpload}
       />
 
-      {/* Button that triggers the file input */}
+      {/* Scan Button - ReceiptX Style */}
       <label
         htmlFor="receipt-upload"
-        className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-teal-600 text-white cursor-pointer hover:opacity-90 transition-all"
+        className="telegram-scan-button px-8 py-4 rounded-xl text-white cursor-pointer hover:opacity-90 transition-all font-semibold"
       >
         📸 Scan Receipt
       </label>
+
+      {/* Telegram-specific info */}
+      {telegramId && (
+        <p className="mt-6 text-xs text-gray-500">
+          Telegram ID: {telegramId}
+        </p>
+      )}
     </main>
   )
 }

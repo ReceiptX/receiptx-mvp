@@ -3,6 +3,9 @@
 import React, { useEffect } from 'react'
 import Providers from '../lib/privyProvider'
 import { WalletAutoGenerator } from './components/WalletAutoGenerator'
+import Navigation from './components/Navigation'
+import Footer from './components/Footer'
+import CookieConsent from './components/CookieConsent'
 import './globals.css'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -29,10 +32,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="en">
-      <body className="bg-[#0B0C10] text-white min-h-screen">
+      <body className="bg-[#0B0C10] text-white min-h-screen flex flex-col">
         <Providers>
           <WalletAutoGenerator />
-          {children}
+          <Navigation />
+          <div className="flex-1 flex flex-col">
+            {children}
+          </div>
+          <Footer />
+          <CookieConsent />
         </Providers>
       </body>
     </html>

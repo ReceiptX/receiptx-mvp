@@ -3,13 +3,34 @@ import { processImageOCR } from "@/lib/ocrService";
 import { supabase } from "@/lib/supabaseClient";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rateLimiter";
 import crypto from "crypto";
+import { 
+  detectBrandFromText, 
+  getBrandMultiplier, 
+  getBrandDisplayName,
+  BASE_RWT_PER_CURRENCY_UNIT,
+  type BrandKey 
+} from "@/lib/multipliers";
+import { ReceiptValidator } from "@/lib/receiptValidator";
 
-// Optional blockchain integration (only if files exist locally)
-let SupraClient: any = null;
-try {
-  SupraClient = require("@/lib/blockchain/supraClient").SupraClient;
-} catch (e) {
-  console.log("ℹ️ Blockchain integration disabled (supraClient not found)");
+// Optional blockchain integration (EVM smart contract)
+// Note: Blockchain modules are disabled (.ts.disabled) for MVP launch
+// Database-only token tracking is used instead
+let mintRWT: any = null;
+let isContractConfigured: any = null;
+let processReferralBonus: any = null;
+let hasReceivedReferralBonus: any = null;
+
+// Skip blockchain imports during build (files are .disabled)
+if (process.env.ENABLE_BLOCKCHAIN === 'true') {
+  try {
+    const receiptxToken = require("@/lib/blockchain/receiptxToken");
+    mintRWT = receiptxToken.mintRWT;
+    isContractConfigured = receiptxToken.isContractConfigured;
+    processReferralBonus = receiptxToken.processReferralBonus;
+    hasReceivedReferralBonus = receiptxToken.hasReceivedReferralBonus;
+  } catch (e) {
+    console.log("ℹ️ Blockchain integration disabled (receiptxToken not found)");
+  }
 }
 
 export const runtime = "nodejs";
@@ -67,6 +88,9 @@ export async function POST(req: NextRequest) {
     // Convert File → Buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+    
+    // Generate image hash for fraud detection
+    const imageHash = crypto.createHash('sha256').update(buffer).digest('hex');
 
     // 1. Upload to Supabase Storage
     const filePath = `receipts/${Date.now()}-${file.name}`;
@@ -95,52 +119,32 @@ export async function POST(req: NextRequest) {
     
     console.log("📄 OCR Text extracted:", rawText.slice(0, 200));
 
-    // 2.5. Check for duplicate receipt (fraud prevention)
-    // Create a simple hash from key receipt data
-    const receiptHash = Buffer.from(rawText.slice(0, 200)).toString('base64').slice(0, 50);
-    
-    const { data: duplicateCheck } = await supabase
-      .from("receipts")
-      .select("id, telegram_id, created_at")
-      .eq("metadata->>receiptHash", receiptHash)
-      .limit(1);
-    
-    if (duplicateCheck && duplicateCheck.length > 0) {
-      const existingReceipt = duplicateCheck[0];
-      console.log("⚠️ Duplicate receipt detected:", existingReceipt.id);
-      
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: "This receipt has already been submitted",
-          duplicate: true,
-          originalSubmission: existingReceipt.created_at
-        },
-        { status: 409 }
-      );
-    }
-
     // 3. Extract non-personal data
-    // Look for common receipt total patterns
+    // Look for common receipt total patterns (supports both US and European formats)
     const amountPatterns = [
-      /total[:\s]*\$?(\d+\.?\d{0,2})/i,
-      /amount[:\s]*\$?(\d+\.?\d{0,2})/i,
-      /\$(\d+\.\d{2})/,
-      /(\d+\.\d{2})/,
+      /total\s+net[:\s]*€?\$?(\d+[,.]?\d{0,2})/i, // "TOTAL NET 5,20" or "TOTAL NET 5.20"
+      /total[:\s]*€?\$?(\d+[,.]?\d{0,2})/i,       // "Total: 5.20" or "Total 5,20"
+      /amount[:\s]*€?\$?(\d+[,.]?\d{0,2})/i,      // "Amount: 5.20"
+      /\$(\d+\.\d{2})/,                            // "$5.20"
+      /€(\d+[,.]\d{2})/,                           // "€5,20" or "€5.20"
+      /(\d+[,.]\d{2})/,                            // "5.20" or "5,20"
     ];
     
     let amount = 0.0;
     for (const pattern of amountPatterns) {
       const match = rawText.match(pattern);
       if (match) {
-        amount = parseFloat(match[1]);
+        // Convert European format (5,20) to US format (5.20)
+        const amountStr = match[1].replace(',', '.');
+        amount = parseFloat(amountStr);
         console.log(`✅ Found amount: $${amount} using pattern: ${pattern}`);
         break;
       }
     }
     
-    if (amount === 0) {
-      console.log("⚠️ No amount found in OCR text");
+    if (amount === 0 || isNaN(amount)) {
+      console.log("⚠️ No valid amount found in OCR text");
+      amount = 0.0;
     }
 
     const brand = detectBrand(rawText); // custom logic below
@@ -148,18 +152,84 @@ export async function POST(req: NextRequest) {
     
     console.log(`🏷️ Brand: ${brand}, Multiplier: ${multiplier}x`);
 
-    // 4. Insert into Supabase
+    // 3.5. FRAUD DETECTION (Patent #3: AI-Powered Receipt Processing)
+    const validator = new ReceiptValidator();
+    const fraudCheck = await validator.validateReceipt({
+      ocrText: rawText,
+      totalAmount: amount,
+      merchantName: brand,
+      purchaseDate: new Date().toISOString(), // Will extract properly from OCR
+      userEmail: user_email,
+      telegramId: telegram_id,
+      imageUrl: image_url
+    });
+
+    // Handle fraud detection results
+    if (fraudCheck.status === 'rejected') {
+      console.log('🚫 Receipt rejected by fraud detection:', {
+        hash: fraudCheck.receiptHash,
+        score: fraudCheck.fraudScore,
+        indicators: fraudCheck.indicators
+      });
+      
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Receipt validation failed',
+          reason: fraudCheck.reason,
+          fraudScore: fraudCheck.fraudScore,
+          indicators: fraudCheck.indicators
+        },
+        { status: 400 }
+      );
+    }
+
+    if (fraudCheck.status === 'flagged') {
+      console.warn('⚠️ Receipt flagged for review:', {
+        hash: fraudCheck.receiptHash,
+        score: fraudCheck.fraudScore,
+        indicators: fraudCheck.indicators
+      });
+      // Continue processing but mark for admin review
+    }
+
+    console.log('✅ Fraud check passed:', {
+      status: fraudCheck.status,
+      score: fraudCheck.fraudScore,
+      hash: fraudCheck.receiptHash
+    });
+
+    // 4. Calculate RWT rewards (before inserting receipt)
+    const baseRWT = amount * BASE_RWT_PER_CURRENCY_UNIT; // $1 = 1 RWT base
+    const totalRWT = Math.round(baseRWT * multiplier);
+
+    console.log(`💰 RWT Calculation:
+      - Amount: $${amount}
+      - Base RWT: ${baseRWT}
+      - Brand: ${brand}
+      - Multiplier: ${multiplier}x
+      - Total RWT: ${totalRWT}
+    `);
+
+    // 5. Insert into Supabase with fraud detection data
     const { data: insertData, error: insertError } = await supabase
       .from("receipts")
       .insert({
         brand,
         amount,
         multiplier,
+        rwt_earned: totalRWT,
         user_email,
         telegram_id,
         wallet_address,
         image_url,
-        metadata: { rawText, receiptHash },
+        metadata: { rawText },
+        receipt_hash: fraudCheck.receiptHash,
+        fraud_score: fraudCheck.fraudScore,
+        validation_status: fraudCheck.status,
+        fraud_indicators: fraudCheck.indicators,
+        confidence_score: fraudCheck.confidenceScore,
+        image_hash: imageHash,
       })
       .select();
 
@@ -169,18 +239,6 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
-
-    // 5. Calculate RWT rewards
-    const baseRWT = amount * 1; // $1 = 1 RWT base
-    const totalRWT = baseRWT * multiplier;
-
-    console.log(`💰 RWT Calculation:
-      - Amount: $${amount}
-      - Base RWT: ${baseRWT}
-      - Brand: ${brand}
-      - Multiplier: ${multiplier}x
-      - Total RWT: ${totalRWT}
-    `);
 
     // 6. Log reward to user_rewards table
     const { data: rewardData, error: rewardError } = await supabase
@@ -203,41 +261,207 @@ export async function POST(req: NextRequest) {
       console.log("✅ Reward logged to user_rewards:", rewardData[0]);
     }
 
-    // 7. Mint RWT tokens on-chain (if contract deployed and wallet exists)
-    let blockchainTx = null;
-    if (wallet_address && process.env.SUPRA_CONTRACT_ADDRESS && SupraClient) {
+    // 7. Check if this is user's first receipt and process referral bonus
+    let referralBonus = null;
+    if (wallet_address) {
       try {
-        const supraClient = new SupraClient();
-        
-        // Create receipt hash for on-chain fraud prevention
-        const receiptHashBytes = crypto.createHash('sha256')
-          .update(rawText.substring(0, 200))
-          .digest('hex');
-        const receiptHashHex = '0x' + receiptHashBytes;
-        
-        // Check if receipt already used on-chain
-        const isUsed = await supraClient.isReceiptUsed(receiptHashHex);
-        if (isUsed) {
-          console.log("⚠️ Receipt already used on-chain");
-        } else {
-          // Store receipt hash on-chain
-          await supraClient.storeReceiptHash(receiptHashHex);
-          console.log("✅ Receipt hash stored on-chain");
+        // Check if there's a pending referral for this user
+        const { data: referralData, error: referralError } = await supabase
+          .from("referrals")
+          .select("*")
+          .or(`referred_email.eq.${user_email || 'null'},referred_telegram_id.eq.${telegram_id || 'null'},referred_wallet_address.eq.${wallet_address}`)
+          .eq("status", "pending")
+          .single();
+
+        if (referralData && !referralError) {
+          console.log("🎁 Found pending referral for user:", referralData.id);
+          
+          // Check if this is from a multiplier brand (Starbucks, Circle K, McDonald's)
+          const brandKey = detectBrandFromText(rawText);
+          const isMultiplierBrand = brandKey ? ['starbucks', 'circle_k', 'mcdonalds'].includes(brandKey) : false;
+          const aiaBonus = isMultiplierBrand ? 10 : 5;
+          
+          console.log(`🎁 Referral bonus: ${aiaBonus} AIA (multiplier brand: ${isMultiplierBrand})`);
+          
+          // Update referral status to qualified
+          const { error: updateReferralError } = await supabase
+            .from("referrals")
+            .update({
+              status: 'qualified',
+              first_receipt_id: insertData[0].id,
+              first_receipt_brand: brand,
+              is_multiplier_brand: isMultiplierBrand,
+              aia_bonus_amount: aiaBonus
+            })
+            .eq("id", referralData.id);
+          
+          if (updateReferralError) {
+            console.error("⚠️ Failed to update referral:", updateReferralError.message);
+          }
+          
+          // Process blockchain referral bonus if contract is available
+          if (processReferralBonus && hasReceivedReferralBonus && isContractConfigured && isContractConfigured()) {
+            try {
+              // Get referrer wallet address
+              const referrerWallet = referralData.referrer_wallet_address;
+              
+              if (referrerWallet) {
+                // Check if already rewarded on-chain
+                const alreadyRewarded = await hasReceivedReferralBonus(wallet_address);
+                
+                if (!alreadyRewarded) {
+                  console.log(`🔗 Processing referral bonus: ${aiaBonus} AIA to ${referrerWallet}`);
+                  
+                  const bonusResult = await processReferralBonus(
+                    referrerWallet,
+                    wallet_address,
+                    isMultiplierBrand
+                  );
+                  
+                  if (bonusResult.success) {
+                    console.log("✅ Referral bonus paid on blockchain:", bonusResult.txHash);
+                    
+                    // Update referral with blockchain info
+                    await supabase
+                      .from("referrals")
+                      .update({
+                        status: 'rewarded',
+                        blockchain_tx_hash: bonusResult.txHash,
+                        rewarded_at: new Date().toISOString()
+                      })
+                      .eq("id", referralData.id);
+                    
+                    referralBonus = {
+                      referrer: referrerWallet,
+                      aiaAmount: aiaBonus,
+                      txHash: bonusResult.txHash,
+                      isMultiplierBrand
+                    };
+                  } else {
+                    console.error("⚠️ Blockchain referral bonus failed:", bonusResult.error);
+                  }
+                } else {
+                  console.log("ℹ️ Referral bonus already paid on-chain");
+                }
+              } else {
+                console.log("ℹ️ Referrer has no wallet address, skipping blockchain bonus");
+              }
+            } catch (error: any) {
+              console.error("⚠️ Referral bonus processing failed:", error.message);
+            }
+          } else {
+            console.log("ℹ️ Blockchain referral bonus skipped (contract not configured)");
+          }
         }
+      } catch (error: any) {
+        console.error("⚠️ Referral check failed (continuing without):", error.message);
+      }
+    }
+
+    // 8. Mint RWT tokens on-chain (if contract deployed and wallet exists)
+    let blockchainTx = null;
+    if (wallet_address && mintRWT && isContractConfigured && isContractConfigured()) {
+      try {
+        console.log(`🔗 Minting ${totalRWT} RWT to ${wallet_address}`);
         
-        // Mint RWT tokens on Supra
-        const txHash = await supraClient.mintRWT(wallet_address, totalRWT);
+        // Convert RWT amount to wei (assuming 18 decimals)
+        const { ethers } = await import('ethers');
+        const amountInWei = ethers.parseUnits(totalRWT.toString(), 18);
         
-        console.log("✅ RWT tokens minted on Supra blockchain:", txHash);
-        blockchainTx = {
-          txHash: txHash,
-          tokens: totalRWT,
-          explorer: `https://testnet.suprascan.io/tx/${txHash}`
-        };
+        // Mint RWT tokens via smart contract
+        const result = await mintRWT(wallet_address, amountInWei);
+        
+        if (result.success) {
+          console.log("✅ RWT tokens minted on blockchain:", result.txHash);
+          
+          // Update reward record with blockchain transaction
+          const { error: updateError } = await supabase
+            .from("user_rewards")
+            .update({
+              blockchain_tx_hash: result.txHash,
+              blockchain_explorer_url: `https://testnet.suprascan.io/tx/${result.txHash}`
+            })
+            .eq("receipt_id", insertData[0].id);
+          
+          if (updateError) {
+            console.error("⚠️ Failed to update reward with tx hash:", updateError.message);
+          }
+          
+          blockchainTx = {
+            txHash: result.txHash,
+            tokens: totalRWT,
+            explorer: `https://testnet.suprascan.io/tx/${result.txHash}`
+          };
+        } else {
+          console.error("⚠️ Blockchain minting failed:", result.error);
+        }
       } catch (error: any) {
         console.error("⚠️ Blockchain minting failed (continuing without):", error.message);
         // Don't fail the whole request if blockchain fails
       }
+    } else {
+      console.log("ℹ️ Blockchain minting skipped (contract not configured or no wallet)");
+    }
+
+    // ===========================
+    // Step 8: NFT Auto-Minting on Milestones
+    // ===========================
+    let mintedNFTs: any[] = [];
+    try {
+      console.log("🎁 Checking NFT eligibility...");
+      
+      // Get user's total receipt count and eligible NFTs
+      const eligibilityParams = new URLSearchParams();
+      if (user_email) eligibilityParams.set("user_email", user_email);
+      if (telegram_id) eligibilityParams.set("telegram_id", telegram_id.toString());
+      if (wallet_address) eligibilityParams.set("wallet_address", wallet_address);
+
+      const eligibilityRes = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/nfts/mint?${eligibilityParams}`,
+        { method: 'GET' }
+      );
+      
+      if (eligibilityRes.ok) {
+        const eligibilityData = await eligibilityRes.json();
+        
+        if (eligibilityData.eligible_nfts && eligibilityData.eligible_nfts.length > 0) {
+          console.log(`🎁 User eligible for ${eligibilityData.eligible_nfts.length} NFT(s)`);
+          
+          // Auto-mint each eligible NFT
+          for (const eligibleNFT of eligibilityData.eligible_nfts) {
+            if (eligibleNFT.is_eligible) {
+              try {
+                const mintRes = await fetch(
+                  `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/nfts/mint`,
+                  {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      user_email,
+                      telegram_id,
+                      wallet_address,
+                      nft_type: eligibleNFT.nft_type,
+                    }),
+                  }
+                );
+                
+                if (mintRes.ok) {
+                  const mintData = await mintRes.json();
+                  mintedNFTs.push(mintData.nft);
+                  console.log(`✅ Auto-minted NFT: ${eligibleNFT.nft_name} (${eligibleNFT.nft_type})`);
+                }
+              } catch (mintErr) {
+                console.error(`❌ Failed to mint ${eligibleNFT.nft_type}:`, mintErr);
+              }
+            }
+          }
+        } else {
+          console.log("ℹ️ No new NFTs eligible at this time");
+        }
+      }
+    } catch (nftErr) {
+      console.error("❌ NFT auto-minting failed:", nftErr);
+      // Don't fail the whole request if NFT minting fails
     }
 
     return NextResponse.json(
@@ -252,6 +476,8 @@ export async function POST(req: NextRequest) {
           brand,
         },
         blockchain: blockchainTx,
+        referral: referralBonus,
+        nfts: mintedNFTs.length > 0 ? mintedNFTs : undefined,
       },
       { headers: getRateLimitHeaders(rateLimit) }
     );
@@ -263,22 +489,14 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// 🔎 Detect Brand
+// 🔎 Brand Detection & Multiplier Engine
 function detectBrand(text: string): string {
-  text = text.toLowerCase();
-
-  if (text.includes("starbucks")) return "Starbucks";
-  if (text.includes("circle k")) return "Circle K";
-  if (text.includes("dr pepper") || text.includes("dr. pepper"))
-    return "Dr Pepper";
-
-  return "Unknown";
+  const brandKey = detectBrandFromText(text);
+  return getBrandDisplayName(brandKey);
 }
 
-// ⭐ Brand Multiplier Engine
 function brandMultiplier(brand: string): number {
-  if (brand === "Starbucks") return 1.5;
-  if (brand === "Circle K") return 1.5;
-  if (brand === "Dr Pepper") return 1.5;
-  return 1.0;
+  // Convert display name back to key for lookup
+  const brandKey = detectBrandFromText(brand);
+  return getBrandMultiplier(brandKey);
 }

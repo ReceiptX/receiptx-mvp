@@ -1,0 +1,45 @@
+/* ReceiptX Telegram Mini App Custom Styles */
+/* Overrides Telegram WebView theme to match ReceiptX branding */
+
+.telegram-main {
+  background-color: #0B0C10 !important;
+  color: #FFFFFF !important;
+  min-height: 100vh !important;
+}
+
+.telegram-scan-button {
+  background: linear-gradient(to right, #00FFFF, #0066FF) !important;
+  color: #0B0C10 !important;
+  box-shadow: 0 10px 25px rgba(0, 255, 255, 0.2) !important;
+}
+
+/* Override Telegram's default theme variables */
+:root {
+  --tg-theme-bg-color: #0B0C10 !important;
+  --tg-theme-text-color: #FFFFFF !important;
+  --tg-theme-hint-color: #9CA3AF !important;
+  --tg-theme-link-color: #00FFFF !important;
+  --tg-theme-button-color: #00FFFF !important;
+  --tg-theme-button-text-color: #0B0C10 !important;
+  --tg-theme-secondary-bg-color: #1F2833 !important;
+}
+
+/* Telegram WebView specific fixes */
+body {
+  background-color: #0B0C10 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Ensure all text is visible on dark background */
+* {
+  color: inherit !important;
+}
+
+/* Wallet display card */
+.wallet-card {
+  background-color: #1F2833;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}

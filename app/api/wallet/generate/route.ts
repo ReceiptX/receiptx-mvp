@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
+import { MultiTenantWalletGenerator } from '@/lib/multiTenantWalletGenerator';
 
-// Optional wallet generation (only if proprietary module exists)
-let SeamlessWalletGenerator: any = null;
-try {
-  SeamlessWalletGenerator = require('@/lib/seamlessWalletGenerator').SeamlessWalletGenerator;
-} catch (e) {
-  console.log("ℹ️ Seamless wallet generation disabled (module not found)");
-}
+// ReceiptX tenant configuration
+const RECEIPTX_TENANT_CONFIG = {
+  tenant_id: process.env.RECEIPTX_TENANT_ID || "receiptx_main",
+  tenant_salt: process.env.RECEIPTX_TENANT_SALT || process.env.WEB2WEB3_SECRET_KEY || "",
+  tenant_pepper: process.env.RECEIPTX_TENANT_PEPPER || process.env.WEB2WEB3_PEPPER || "",
+  wallet_policy: "custodial" as const
+};
 
 export async function POST(req: Request) {
   try {
@@ -49,21 +50,22 @@ export async function POST(req: Request) {
       });
     }
 
-    // Check if wallet generator is available
-    if (!SeamlessWalletGenerator) {
+    // Validate tenant configuration
+    if (!RECEIPTX_TENANT_CONFIG.tenant_salt || !RECEIPTX_TENANT_CONFIG.tenant_pepper) {
       return NextResponse.json(
-        { success: false, error: 'Wallet generation not available in this deployment' },
-        { status: 503 }
+        { success: false, error: 'Wallet generation not configured. Please set RECEIPTX_TENANT_SALT and RECEIPTX_TENANT_PEPPER' },
+        { status: 500 }
       );
     }
 
-    // Generate new wallet using proprietary tech
-    const generator = new SeamlessWalletGenerator();
-    const wallet = await generator.generateWalletSilently({
+    // Generate new wallet using multi-tenant system
+    const generator = new MultiTenantWalletGenerator();
+    const wallet = await generator.generateWalletForTenant({
       email,
       telegram_id,
+      tenant_id: RECEIPTX_TENANT_CONFIG.tenant_id,
       biometrics
-    });
+    }, RECEIPTX_TENANT_CONFIG);
 
     // Encrypt private key before storage
     const encryptedKey = await encryptPrivateKey(wallet.privateKey);

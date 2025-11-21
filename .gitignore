@@ -56,3 +56,6 @@ lib/proprietary/
 lib/seamlessWalletGenerator.ts
 lib/entropyEngine.ts
 lib/blockchain/
+PATENT_ENHANCEMENTS.md
+RECEIPTX_MVP_STATUS.md
+DROPIFY_INTEGRATION_VALUE.md

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 // Optional proprietary integrations (only if files exist locally)
-let DropifyBusinessAPI: any = null;
+let ReceiptXBusinessAPI: any = null;
 let Web2Web3Bridge: any = null;
 let TokenDistributor: any = null;
 let api: any = null;
@@ -9,14 +9,14 @@ let bridge: any = null;
 let distributor: any = null;
 
 try {
-  DropifyBusinessAPI = require("@/lib/proprietary/businessAPI").DropifyBusinessAPI;
+  ReceiptXBusinessAPI = require("@/lib/proprietary/businessAPI").ReceiptXBusinessAPI;
   Web2Web3Bridge = require("@/lib/proprietary/web2web3Bridge").Web2Web3Bridge;
   TokenDistributor = require("@/lib/proprietary/tokenDistributor").TokenDistributor;
-  api = new DropifyBusinessAPI();
+  api = new ReceiptXBusinessAPI();
   bridge = new Web2Web3Bridge();
   distributor = new TokenDistributor();
 } catch (e) {
-  console.log("ℹ️ Business integration disabled (proprietary modules not found)");
+  console.log("ℹ️ ReceiptX business integration disabled (proprietary modules not found)");
 }
 
 export async function POST(req: Request) {

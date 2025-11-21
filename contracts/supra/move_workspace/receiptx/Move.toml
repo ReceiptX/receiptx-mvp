@@ -1,0 +1,16 @@
+[package]
+name = "ReceiptX"
+version = "1.0.0"
+authors = ["ReceiptX Team"]
+
+[addresses]
+receiptx = "_"
+
+[dependencies]
+MoveStdlib = { git = "https://github.com/Entropy-Foundation/supra-framework.git", subdir = "supra-framework/sources/move-stdlib", rev = "main" }
+SupraFramework = { git = "https://github.com/Entropy-Foundation/supra-framework.git", subdir = "supra-framework/sources/supra-framework", rev = "main" }
+
+[dev-addresses]
+receiptx = "0x1234567890abcdef"
+
+[dev-dependencies]

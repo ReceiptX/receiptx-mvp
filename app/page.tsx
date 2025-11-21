@@ -53,6 +53,13 @@ export default function Home() {
 
       <div className="flex flex-col gap-4">
         <Link
+          href="/dashboard"
+          className="bg-gradient-to-r from-purple-500 to-pink-600 px-6 py-3 rounded-xl text-center hover:opacity-90 transition-all"
+        >
+          🏠 My Dashboard
+        </Link>
+
+        <Link
           href="/receipts/scan"
           className="bg-gradient-to-r from-green-400 to-teal-500 px-6 py-3 rounded-xl text-center hover:opacity-90 transition-all"
         >
