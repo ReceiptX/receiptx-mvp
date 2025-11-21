@@ -43,19 +43,15 @@ next-env.d.ts
 # Local Netlify folder
 .netlify
 
-# Deployment and setup documentation (keep local only)
+# Documentation (keep local only)
+*.md
+!README.md
+
+# Database migrations (keep local only)
 *.sql
-*SETUP*.md
-*DEPLOY*.md
-*GUIDE*.md
-*WALLET*.md
-*ACTIVATION*.md
 
 # Proprietary technology (keep local only)
 lib/proprietary/
 lib/seamlessWalletGenerator.ts
 lib/entropyEngine.ts
 lib/blockchain/
-PATENT_ENHANCEMENTS.md
-RECEIPTX_MVP_STATUS.md
-DROPIFY_INTEGRATION_VALUE.md
