@@ -1,10 +1,3 @@
 [build]
   command = "npm run build"
   publish = ".next"
-
-[build.environment]
-  NODE_VERSION = "20.18.0"
-  # Removed unnecessary environment variables for minimal configuration
-
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
