@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const email = searchParams.get("email");
+    const email = searchParams.get("user_email");
     const telegram_id = searchParams.get("telegram_id");
     const wallet_address = searchParams.get("wallet_address");
     const status = searchParams.get("status") || "active";
@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
+      success: true,
       nfts: nfts || [],
       count: nfts?.length || 0
     });

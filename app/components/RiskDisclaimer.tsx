@@ -2,26 +2,29 @@
 
 export default function RiskDisclaimer() {
   return (
-    <div className="bg-yellow-600/10 border-l-4 border-yellow-600 p-4 mb-6">
+    <div className="bg-blue-600/10 border-l-4 border-blue-600 p-4 mb-6">
       <div className="flex items-start">
         <div className="flex-shrink-0">
-          <svg className="h-5 w-5 text-yellow-600" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          <svg className="h-5 w-5 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
           </svg>
         </div>
         <div className="ml-3">
-          <h3 className="text-sm font-medium text-yellow-400">Investment Risk Warning</h3>
-          <div className="mt-2 text-sm text-yellow-200">
+          <h3 className="text-sm font-medium text-blue-400">Important Information</h3>
+          <div className="mt-2 text-sm text-blue-200">
             <p>
-              <strong>ReceiptX involves cryptocurrency rewards and NFTs.</strong> Please be aware:
+              <strong>ReceiptX is a rewards program.</strong> By participating, you understand:
             </p>
             <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>Cryptocurrency values can be volatile and may fluctuate significantly</li>
-              <li>Past performance does not guarantee future results</li>
-              <li>You may lose some or all of your staked tokens</li>
-              <li>This is not financial advice - consult a professional advisor</li>
-              <li>Only participate with funds you can afford to lose</li>
+              <li>Reward tokens (RWT/AIA) are loyalty points with no guaranteed monetary value</li>
+              <li>NFTs are digital collectibles earned through participation, not investments</li>
+              <li>We do not offer financial products, securities, or investment advice</li>
+              <li>Tokens cannot be purchased - they are earned only through uploading receipts</li>
+              <li>Program terms may change; rewards are subject to availability</li>
             </ul>
+            <p className="mt-2 text-xs text-blue-300">
+              By using ReceiptX, you acknowledge this is a rewards program similar to airline miles or credit card points.
+            </p>
           </div>
         </div>
       </div>

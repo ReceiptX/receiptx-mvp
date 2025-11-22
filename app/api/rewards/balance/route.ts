@@ -46,10 +46,10 @@ export async function GET(request: NextRequest) {
     // Calculate current balance
     const rwtBalance = totalEarned - totalSpent;
 
-    // Get AIA balance (if exists in user_stats)
+    // Get AIA balance from user_stats
     let aiaBalance = 0;
     
-    let statsQuery = supabase.from("user_stats").select("aia_balance");
+    let statsQuery = supabase.from("user_stats").select("total_aia_earned");
     
     if (user_email) {
       statsQuery = statsQuery.eq("user_email", user_email);
@@ -62,10 +62,11 @@ export async function GET(request: NextRequest) {
     const { data: statsData } = await statsQuery.single();
 
     if (statsData) {
-      aiaBalance = statsData.aia_balance || 0;
+      aiaBalance = statsData.total_aia_earned || 0;
     }
 
     return NextResponse.json({
+      success: true,
       rwtBalance: rwtBalance,
       aiaBalance: aiaBalance,
       rwt_earned: totalEarned,

@@ -1,26 +1,22 @@
-import { NextResponse } from "next/server";
-
-// Optional proprietary integrations (only if files exist locally)
-let ReceiptXBusinessAPI: any = null;
-let Web2Web3Bridge: any = null;
-let TokenDistributor: any = null;
-let api: any = null;
-let bridge: any = null;
-let distributor: any = null;
-
-try {
-  ReceiptXBusinessAPI = require("@/lib/proprietary/businessAPI").ReceiptXBusinessAPI;
-  Web2Web3Bridge = require("@/lib/proprietary/web2web3Bridge").Web2Web3Bridge;
-  TokenDistributor = require("@/lib/proprietary/tokenDistributor").TokenDistributor;
-  api = new ReceiptXBusinessAPI();
-  bridge = new Web2Web3Bridge();
-  distributor = new TokenDistributor();
-} catch (e) {
-  console.log("ℹ️ ReceiptX business integration disabled (proprietary modules not found)");
-}
+// import { NextResponse } from "next/server";
+// Proprietary integrations are disabled for MVP/Netlify build
+// let ReceiptXBusinessAPI: any = null;
+// let Web2Web3Bridge: any = null;
+// let TokenDistributor: any = null;
+// let api: any = null;
+// let bridge: any = null;
+// let distributor: any = null;
+// async function initProprietaryModules() {
+//   return false;
+// }
 
 export async function POST(req: Request) {
   try {
+    // Initialize proprietary modules on first request
+    if (!api && !bridge && !distributor) {
+      await initProprietaryModules();
+    }
+
     // API Key Authentication
     const apiKey = req.headers.get('x-api-key');
     const validApiKey = process.env.BUSINESS_API_KEY;

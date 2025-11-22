@@ -76,30 +76,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
-    // Add AIA to user's balance
-    let balanceQuery = supabase.from("user_rewards").select("*");
-    if (user_email) balanceQuery = balanceQuery.eq("email", user_email);
+    // Add AIA to user's balance in user_stats
+    let balanceQuery = supabase.from("user_stats").select("*");
+    if (user_email) balanceQuery = balanceQuery.eq("user_email", user_email);
     else if (telegram_id) balanceQuery = balanceQuery.eq("telegram_id", telegram_id);
     else balanceQuery = balanceQuery.eq("wallet_address", wallet_address);
 
     const { data: currentBalance } = await balanceQuery.single();
 
-    const newAiaBalance = (currentBalance?.aia_balance || 0) + aiaValue;
+    const newAiaBalance = (currentBalance?.total_aia_earned || 0) + aiaValue;
 
-    // Upsert user rewards
-    const rewardData: any = {
-      aia_balance: newAiaBalance,
+    // Upsert user stats
+    const statsData: any = {
+      total_aia_earned: newAiaBalance,
       updated_at: new Date().toISOString()
     };
 
-    if (user_email) rewardData.email = user_email;
-    if (telegram_id) rewardData.telegram_id = telegram_id;
-    if (wallet_address) rewardData.wallet_address = wallet_address;
+    if (user_email) statsData.user_email = user_email;
+    if (telegram_id) statsData.telegram_id = telegram_id;
+    if (wallet_address) statsData.wallet_address = wallet_address;
 
     const { error: balanceError } = await supabase
-      .from("user_rewards")
-      .upsert([rewardData], {
-        onConflict: user_email ? "email" : telegram_id ? "telegram_id" : "wallet_address"
+      .from("user_stats")
+      .upsert([statsData], {
+        onConflict: user_email ? "user_email" : telegram_id ? "telegram_id" : "wallet_address"
       });
 
     if (balanceError) {

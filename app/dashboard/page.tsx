@@ -32,9 +32,8 @@ interface NFT {
 
 interface Receipt {
   id: string;
-  merchant_name: string;
-  total_amount: number;
-  receipt_date: string;
+  brand: string;
+  amount: number;
   rwt_earned: number;
   multiplier: number;
   created_at: string;
@@ -101,9 +100,12 @@ export default function DashboardPage() {
         referralCodeRes.json()
       ]);
 
+      console.log("Balance data:", balances);
+      console.log("Comprehensive stats:", comprehensive);
+      
       setStats({
-        rwtBalance: balances.rwtBalance || 0,
-        aiaBalance: balances.aiaBalance || 0,
+        rwtBalance: balances.success ? (balances.rwtBalance || 0) : 0,
+        aiaBalance: balances.success ? (balances.aiaBalance || 0) : 0,
         comprehensiveStats: comprehensive.success ? comprehensive.stats : null,
         nfts: nftsData.success ? nftsData.nfts : [],
         recentReceipts: receiptsData.success ? receiptsData.receipts : [],
@@ -317,7 +319,7 @@ export default function DashboardPage() {
                 >
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-white">
-                      {receipt.merchant_name}
+                      {receipt.brand}
                       {receipt.multiplier > 1 && (
                         <span className="ml-2 text-xs bg-yellow-500 text-black px-2 py-1 rounded">
                           {receipt.multiplier}x
@@ -325,7 +327,7 @@ export default function DashboardPage() {
                       )}
                     </h3>
                     <p className="text-sm text-gray-400">
-                      ${receipt.total_amount.toFixed(2)} • {new Date(receipt.receipt_date).toLocaleDateString()}
+                      ${receipt.amount.toFixed(2)} • {new Date(receipt.created_at).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="text-right">

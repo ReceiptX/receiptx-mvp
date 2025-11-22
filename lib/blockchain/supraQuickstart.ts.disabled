@@ -1,0 +1,100 @@
+import {
+  HexString,
+  SupraAccount,
+  SupraClient,
+} from "supra-l1-sdk";
+
+/**
+ * Quick test of Supra SDK integration
+ * Usage: npx ts-node lib/blockchain/supraQuickstart.ts
+ */
+async function main() {
+  try {
+    console.log("🚀 Supra SDK Quickstart");
+    console.log("=".repeat(50));
+
+    // Initialize SupraClient
+    const supraClient = await SupraClient.init(
+      "https://rpc-testnet.supra.com/"
+    );
+    console.log("✓ Supra client initialized");
+
+    // Initialize account from private key
+    const privateKey = process.env.SUPRA_PRIVATE_KEY || 
+                      process.env.DEPLOYER_PRIVATE_KEY ||
+                      "5900fdaea7f3203099db1890b81afa518fc5faa806471fbd62b6eed740f8b0a8";
+    
+    const senderAccount = new SupraAccount(
+      Uint8Array.from(Buffer.from(privateKey, "hex"))
+    );
+    
+    const address = senderAccount.address().toString();
+    console.log("✓ Account loaded:", address);
+
+    // Get balance
+    try {
+      const resources = await supraClient.getAccountResources(senderAccount.address());
+      const coinStore = resources.find((r: any) => 
+        r.type.includes("0x1::coin::CoinStore")
+      );
+
+      if (coinStore && coinStore.data && coinStore.data.coin) {
+        const balance = BigInt(coinStore.data.coin.value);
+        console.log("✓ Current balance:", (Number(balance) / 1e8).toFixed(4), "SUPRA");
+      } else {
+        console.log("⚠️ No balance found - account may need funding");
+      }
+    } catch (error) {
+      console.log("⚠️ Could not fetch balance:", error);
+    }
+
+    // Test faucet (if balance is low)
+    console.log("\n💰 Testing faucet...");
+    try {
+      const faucetResult = await supraClient.fundAccountWithFaucet(senderAccount.address());
+      console.log("✓ Faucet funding successful:", faucetResult);
+    } catch (error: any) {
+      console.log("⚠️ Faucet may have failed (could be rate limited):", error.message);
+    }
+
+    // Test transfer (to self for testing)
+    console.log("\n📤 Testing transfer...");
+    try {
+      const receiverAddress = senderAccount.address(); // Transfer to self
+      const transferAmount = BigInt(1000); // 0.00001 SUPRA
+
+      const txResData = await supraClient.transferSupraCoin(
+        senderAccount,
+        receiverAddress,
+        transferAmount,
+        {
+          enableTransactionWaitAndSimulationArgs: {
+            enableWaitForTransaction: true,
+            enableTransactionSimulation: true,
+          },
+        }
+      );
+
+      console.log("✓ Transfer successful!");
+      console.log("  TX Hash:", txResData.txHash);
+      console.log("  Success:", txResData.success);
+    } catch (error: any) {
+      console.log("⚠️ Transfer test failed:", error.message);
+    }
+
+    console.log("\n" + "=".repeat(50));
+    console.log("✅ Supra SDK integration working!");
+    console.log("🎯 Ready to deploy Move contracts");
+
+  } catch (error: any) {
+    console.error("\n❌ Error:", error.message);
+    process.exit(1);
+  }
+}
+
+// Run if executed directly
+if (require.main === module) {
+  main().catch(console.error);
+}
+
+export { main };

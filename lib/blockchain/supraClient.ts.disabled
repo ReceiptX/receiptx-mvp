@@ -1,0 +1,350 @@
+import {
+  HexString,
+  SupraAccount,
+  SupraClient as SupraSDKClient,
+  BCS,
+  TxnBuilderTypes,
+} from "supra-l1-sdk";
+
+/**
+ * SUPRA BLOCKCHAIN CLIENT
+ * Uses Supra's native MoveVM SDK for blockchain interactions
+ */
+export class SupraClient {
+  private client: SupraSDKClient | null = null;
+  private account: SupraAccount | null = null;
+  private rpcUrl: string;
+
+  constructor() {
+    this.rpcUrl = process.env.SUPRA_RPC_URL || "https://rpc-testnet.supra.com/";
+  }
+
+  /**
+   * Initialize the Supra client and account
+   */
+  async initialize(): Promise<void> {
+    try {
+      // Initialize SupraClient
+      this.client = await SupraSDKClient.init(this.rpcUrl);
+      console.log("✓ Supra client initialized");
+
+      // Initialize account from private key
+      const privateKey = process.env.SUPRA_PRIVATE_KEY || process.env.DEPLOYER_PRIVATE_KEY;
+      if (!privateKey) {
+        throw new Error("SUPRA_PRIVATE_KEY not found in environment");
+      }
+
+      // Remove 0x prefix if present
+      const cleanKey = privateKey.startsWith("0x") 
+        ? privateKey.slice(2) 
+        : privateKey;
+
+      this.account = new SupraAccount(
+        Uint8Array.from(Buffer.from(cleanKey, "hex"))
+      );
+      console.log("✓ Supra account loaded:", this.account.address().toString());
+    } catch (error) {
+      console.error("Failed to initialize Supra client:", error);
+      throw error;
+    }
+  
+
+  /**
+   * Mint RWT tokens for a user after receipt scan
+   * NOTE: Requires Move contract deployment - placeholder for now
+   */
+  async mintRWT(userAddress: string, amount: number): Promise<string> {
+    if (!this.client || !this.account) {
+      throw new Error("Supra client not initialized");
+    }
+
+    console.log(`🪙 Minting ${amount} RWT to ${userAddress}...`);
+    
+    try {
+      // TODO: Call Move contract mint function when deployed
+      // const moduleAddress = process.env.SUPRA_CONTRACT_ADDRESS;
+      // return await this.executeMove(
+      //   moduleAddress,
+      //   "receiptx_token",
+      //   "mint_rwt",
+      //   [],
+      //   [userAddress, amount]
+      // );
+      
+      console.log("⚠️ Move contract not yet deployed - minting disabled");
+      return "pending_move_contract_deployment";
+    } catch (error: any) {
+      console.error('❌ Failed to mint RWT:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Store receipt hash on-chain for fraud prevention
+   */
+  async storeReceiptHash(hash: string): Promise<string> {
+    if (!this.client || !this.account) {
+      throw new Error("Supra client not initialized");
+    }
+
+    console.log(`🔐 Storing receipt hash: ${hash}...`);
+    
+    try {
+      // TODO: Call Move contract when deployed
+      console.log("⚠️ Move contract not yet deployed - hash storage disabled");
+      return "pending_move_contract_deployment";
+    } catch (error: any) {
+      console.error('❌ Failed to store receipt hash:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Check if receipt has been used before (on-chain verification)
+   */
+  async isReceiptUsed(hash: string): Promise<boolean> {
+    try {
+      // TODO: Query Move contract when deployed
+      console.log("⚠️ Move contract not yet deployed - returning false");
+      return false;
+    } catch (error: any) {
+      console.error('❌ Failed to check receipt hash:', error.message);
+      return false;
+    }
+  }
+
+  /**
+   * Get user's RWT balance
+   */
+  async getRWTBalance(userAddress: string): Promise<string> {
+    try {
+      // TODO: Query Move contract when deployed
+      return '0';
+    } catch (error: any) {
+      console.error('❌ Failed to get RWT balance:', error.message);
+      return '0';
+    }
+  }
+
+  /**
+   * Get user's AIA balance
+   */
+  async getAIABalance(userAddress: string): Promise<string> {
+    try {
+      // TODO: Query Move contract when deployed
+      return '0';
+    } catch (error: any) {
+      console.error('❌ Failed to get AIA balance:', error.message);
+      return '0';
+    }
+  }
+
+  /**
+   * Mint AIA tokens (governance/analytics token - fixed supply)
+   */
+  async mintAIA(userAddress: string, amount: number): Promise<string> {
+    if (!this.client || !this.account) {
+      throw new Error("Supra client not initialized");
+    }
+
+    console.log(`🏛️ Minting ${amount} AIA to ${userAddress}...`);
+    
+    try {
+      // TODO: Call Move contract when deployed
+      console.log("⚠️ Move contract not yet deployed - minting disabled");
+      return "pending_move_contract_deployment";
+    } catch (error: any) {
+      console.error('❌ Failed to mint AIA:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Get the current account address
+   */
+  getAddress(): string {
+    if (!this.account) {
+      throw new Error("Supra client not initialized");
+    }
+    return this.account.address().toString();
+  }
+
+  /**
+   * Get account balance
+   */
+  async getBalance(address?: string): Promise<bigint> {
+    if (!this.client) {
+      throw new Error("Supra client not initialized");
+    }
+
+    const targetAddress = address || this.getAddress();
+    const hexAddress = new HexString(targetAddress);
+    
+    try {
+      const resources = await this.client.getAccountResources(hexAddress);
+      
+      // Find the coin resource (0x1::coin::CoinStore<0x1::supra_coin::SupraCoin>)
+      const coinStore = resources.find((r: any) => 
+        r.type.includes("0x1::coin::CoinStore")
+      );
+
+      if (coinStore && coinStore.data && coinStore.data.coin) {
+        return BigInt(coinStore.data.coin.value);
+      }
+
+      return BigInt(0);
+    } catch (error) {
+      console.error("Failed to get balance:", error);
+      return BigInt(0);
+    }
+  }
+
+  /**
+   * Transfer Supra coins to another address
+   */
+  async transferSupra(
+    toAddress: string,
+    amount: bigint
+  ): Promise<string> {
+    if (!this.client || !this.account) {
+      throw new Error("Supra client not initialized");
+    }
+
+    try {
+      const receiverAddress = new HexString(toAddress);
+
+      const txResData = await this.client.transferSupraCoin(
+        this.account,
+        receiverAddress,
+        amount,
+        {
+          enableTransactionWaitAndSimulationArgs: {
+            enableWaitForTransaction: true,
+            enableTransactionSimulation: true,
+          },
+        }
+      );
+
+      console.log("✓ Transfer successful:", txResData.txHash);
+      return txResData.txHash;
+    } catch (error) {
+      console.error("Transfer failed:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Fund account with testnet faucet
+   */
+  async fundWithFaucet(address?: string): Promise<any> {
+    if (!this.client) {
+      throw new Error("Supra client not initialized");
+    }
+
+    const targetAddress = address 
+      ? new HexString(address) 
+      : this.account!.address();
+
+    try {
+      const result = await this.client.fundAccountWithFaucet(targetAddress);
+      console.log("✓ Account funded with faucet:", targetAddress.toString());
+      return result;
+    } catch (error) {
+      console.error("Faucet funding failed:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Execute a Move function (for custom contract calls)
+   */
+  async executeMove(
+    moduleAddress: string,
+    moduleName: string,
+    functionName: string,
+    typeArgs: string[] = [],
+    args: any[] = []
+  ): Promise<string> {
+    if (!this.client || !this.account) {
+      throw new Error("Supra client not initialized");
+    }
+
+    try {
+      // Build payload
+      const payload = {
+        function: `${moduleAddress}::${moduleName}::${functionName}`,
+        type_arguments: typeArgs,
+        arguments: args,
+      };
+
+      // Submit transaction
+      const txHash = await this.client.submitTransaction(
+        this.account,
+        payload,
+        {
+          enableTransactionWaitAndSimulationArgs: {
+            enableWaitForTransaction: true,
+            enableTransactionSimulation: true,
+          },
+        }
+      );
+
+      console.log("✓ Move function executed:", txHash);
+      return txHash;
+    } catch (error) {
+      console.error("Move execution failed:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get transaction details
+   */
+  async getTransaction(txHash: string): Promise<any> {
+    if (!this.client) {
+      throw new Error("Supra client not initialized");
+    }
+
+    try {
+      const tx = await this.client.getTransactionByHash(txHash);
+      return tx;
+    } catch (error) {
+      console.error("Failed to get transaction:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Wait for transaction confirmation
+   */
+  async waitForTransaction(txHash: string, timeoutSecs = 60): Promise<any> {
+    if (!this.client) {
+      throw new Error("Supra client not initialized");
+    }
+
+    try {
+      const tx = await this.client.waitForTransactionWithResult(
+        txHash,
+        { timeoutSecs }
+      );
+      return tx;
+    } catch (error) {
+      console.error("Transaction wait failed:", error);
+      throw error;
+    }
+  }
+}
+
+// Singleton instance
+let supraClientInstance: SupraClient | null = null;
+
+/**
+ * Get or create the Supra client singleton
+ */
+export async function getSupraClient(): Promise<SupraClient> {
+  if (!supraClientInstance) {
+    supraClientInstance = new SupraClient();
+    await supraClientInstance.initialize();
+  }
+  return supraClientInstance;
+}

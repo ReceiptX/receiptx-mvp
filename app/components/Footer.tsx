@@ -33,8 +33,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/legal/disclaimer" className="text-gray-400 hover:text-cyan-400 text-sm transition">
-                  Risk Disclaimer
+                <Link href="/legal/program-terms" className="text-gray-400 hover:text-cyan-400 text-sm transition">
+                  Program Terms
                 </Link>
               </li>
             </ul>
@@ -91,7 +91,7 @@ export default function Footer() {
             © {new Date().getFullYear()} ReceiptX. All rights reserved.
           </p>
           <p className="text-gray-500 text-xs mt-2 md:mt-0">
-            ⚠️ Cryptocurrency trading involves risk. Not financial advice.
+            Digital rewards program. Tokens are loyalty points, not securities or investments.
           </p>
         </div>
       </div>

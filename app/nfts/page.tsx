@@ -52,8 +52,13 @@ export default function NFTsPage() {
       setLoading(true);
       const params = new URLSearchParams();
       
-      if (user?.email?.address) params.set("user_email", user.email.address);
-      if (user?.wallet?.address) params.set("wallet_address", user.wallet.address);
+      const email = user?.email?.address;
+      const telegramId = (user as any)?.telegram?.userId;
+      const walletAddress = user?.wallet?.address;
+      
+      if (email) params.set("user_email", email);
+      if (telegramId) params.set("telegram_id", telegramId.toString());
+      if (walletAddress) params.set("wallet_address", walletAddress);
       if (filter !== "all") params.set("status", filter);
 
       const res = await fetch(`/api/nfts/list?${params}`);
@@ -84,6 +89,7 @@ export default function NFTsPage() {
         body: JSON.stringify({
           nft_id: nftId,
           user_email: user?.email?.address,
+          telegram_id: (user as any)?.telegram?.userId,
           wallet_address: user?.wallet?.address,
         }),
       });

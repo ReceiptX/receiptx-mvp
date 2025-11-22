@@ -11,23 +11,42 @@ import {
   type BrandKey 
 } from "@/lib/multipliers";
 import { ReceiptValidator } from "@/lib/receiptValidator";
+import { 
+  detectLotteryTicket, 
+  generateLotteryTicketHash, 
+  isLotteryTicketDuplicate, 
+  recordLotteryTicket 
+} from "@/lib/lotteryDetector";
 
 // Optional blockchain integration (EVM smart contract)
 // Note: Blockchain modules are disabled (.ts.disabled) for MVP launch
 // Database-only token tracking is used instead
+// Blockchain/proprietary modules are disabled for MVP/Netlify build
+// let mintRWT: any = null;
+// let isContractConfigured: any = null;
+// let processReferralBonus: any = null;
+// let hasReceivedReferralBonus: any = null;
 let mintRWT: any = null;
 let isContractConfigured: any = null;
 let processReferralBonus: any = null;
 let hasReceivedReferralBonus: any = null;
 
-// Skip blockchain imports during build (files are .disabled)
-if (process.env.ENABLE_BLOCKCHAIN === 'true') {
+// Skip blockchain imports during build (files are .disabled) or on Vercel
+const isVercel = process.env.VERCEL === '1';
+if (process.env.ENABLE_BLOCKCHAIN === 'true' && !isVercel) {
   try {
-    const receiptxToken = require("@/lib/blockchain/receiptxToken");
-    mintRWT = receiptxToken.mintRWT;
-    isContractConfigured = receiptxToken.isContractConfigured;
-    processReferralBonus = receiptxToken.processReferralBonus;
-    hasReceivedReferralBonus = receiptxToken.hasReceivedReferralBonus;
+    const fs = require('fs');
+    const path = require('path');
+    const tokenPath = path.resolve(__dirname, '../../lib/blockchain/receiptxToken.js');
+    if (fs.existsSync(tokenPath)) {
+      const receiptxToken = require(tokenPath);
+      mintRWT = receiptxToken.mintRWT;
+      isContractConfigured = receiptxToken.isContractConfigured;
+      processReferralBonus = receiptxToken.processReferralBonus;
+      hasReceivedReferralBonus = receiptxToken.hasReceivedReferralBonus;
+    } else {
+      console.log("ℹ️ Blockchain integration disabled (receiptxToken not found)");
+    }
   } catch (e) {
     console.log("ℹ️ Blockchain integration disabled (receiptxToken not found)");
   }
@@ -147,10 +166,54 @@ export async function POST(req: NextRequest) {
       amount = 0.0;
     }
 
+    // Check if this is a lottery ticket (hidden 2x multiplier feature)
+    const lotteryResult = detectLotteryTicket(rawText);
+    let isLotteryTicket = false;
+    let lotteryMultiplier = 1.0;
+    
+    if (lotteryResult.isLotteryTicket && lotteryResult.ticketType === "scratcher") {
+      const lotteryHash = generateLotteryTicketHash(
+        lotteryResult.ticketNumber,
+        lotteryResult.state,
+        rawText
+      );
+      // Check for duplicate lottery ticket
+      const isDuplicate = await isLotteryTicketDuplicate(lotteryHash, supabase);
+      if (!isDuplicate) {
+        isLotteryTicket = true;
+        // Record this lottery ticket to prevent future duplicates
+        await recordLotteryTicket(
+          lotteryHash,
+          lotteryResult,
+          user_email,
+          telegram_id,
+          wallet_address,
+          supabase
+        );
+        // === Plinko Simulation ===
+        const { simulatePlinko } = await import("@/lib/lotteryDetector");
+        const plinkoResult = simulatePlinko(lotteryHash);
+        // Override RWT logic for scratcher: only award Plinko RWT
+        amount = 0; // Prevent normal RWT calculation
+        lotteryMultiplier = 0; // No 2x multiplier
+        // Store Plinko result for later DB insert
+        reqPlinkoResult = plinkoResult;
+        reqPlinkoHash = lotteryHash;
+        reqLotteryResult = lotteryResult;
+        console.log(`🎰 Lottery ticket detected! Plinko triggered. Final column: ${plinkoResult.finalColumn}, RWT: ${plinkoResult.reward}`);
+      } else {
+        console.log(`⚠️ Duplicate lottery ticket detected - Plinko not triggered`);
+      }
+    // --- Plinko integration variables ---
+    let reqPlinkoResult: any = null;
+    let reqPlinkoHash: string | null = null;
+    let reqLotteryResult: any = null;
+    }
+
     const brand = detectBrand(rawText); // custom logic below
     const multiplier = brandMultiplier(brand);
     
-    console.log(`🏷️ Brand: ${brand}, Multiplier: ${multiplier}x`);
+    console.log(`🏷️ Brand: ${brand}, Multiplier: ${multiplier}x${isLotteryTicket ? ' + 2x Lottery Bonus 🎰' : ''}`);
 
     // 3.5. FRAUD DETECTION (Patent #3: AI-Powered Receipt Processing)
     const validator = new ReceiptValidator();
@@ -161,7 +224,8 @@ export async function POST(req: NextRequest) {
       purchaseDate: new Date().toISOString(), // Will extract properly from OCR
       userEmail: user_email,
       telegramId: telegram_id,
-      imageUrl: image_url
+      imageUrl: image_url,
+      imageHash: imageHash // SHA-256 hash of image for duplicate detection
     });
 
     // Handle fraud detection results
@@ -199,19 +263,64 @@ export async function POST(req: NextRequest) {
       hash: fraudCheck.receiptHash
     });
 
-    // 4. Calculate RWT rewards (before inserting receipt)
-    const baseRWT = amount * BASE_RWT_PER_CURRENCY_UNIT; // $1 = 1 RWT base
-    const totalRWT = Math.round(baseRWT * multiplier);
+    // 4. Check for active boosts (Golden Receipt, time-limited multipliers)
+    let boostMultiplier = 1.0;
+    let usedBoostId: string | null = null;
+
+    const { data: activeBoosts, error: boostError } = await supabase
+      .from("user_boosts")
+      .select("*")
+      .eq("active", true)
+      .or(`user_email.eq.${user_email || 'null'},telegram_id.eq.${telegram_id || 'null'},wallet_address.eq.${wallet_address}`)
+      .or("expires_at.is.null,expires_at.gt." + new Date().toISOString())
+      .order("multiplier", { ascending: false }); // Get highest multiplier first
+
+    if (!boostError && activeBoosts && activeBoosts.length > 0) {
+      const boost = activeBoosts[0];
+      boostMultiplier = parseFloat(boost.multiplier.toString());
+      usedBoostId = boost.id;
+
+      console.log(`🚀 Active boost found: ${boost.boost_type} (${boostMultiplier}x)`);
+
+      // Decrement uses_remaining if applicable (Golden Receipt)
+      if (boost.uses_remaining !== null) {
+        const newUses = boost.uses_remaining - 1;
+        await supabase
+          .from("user_boosts")
+          .update({
+            uses_remaining: newUses,
+            active: newUses > 0
+          })
+          .eq("id", boost.id);
+        
+        console.log(`✅ Golden Receipt used (${newUses} uses remaining)`);
+      }
+    }
+
+    // 5. Calculate RWT rewards (with lottery + brand + boost multipliers)
+    let baseRWT = amount * BASE_RWT_PER_CURRENCY_UNIT; // $1 = 1 RWT base
+    let brandMultipliedRWT = baseRWT * multiplier;
+    let lotteryMultipliedRWT = brandMultipliedRWT * lotteryMultiplier; // Apply lottery multiplier
+    let totalRWT = Math.round(lotteryMultipliedRWT * boostMultiplier);
+    // If Plinko triggered, override RWT with Plinko reward
+    if (reqPlinkoResult) {
+      baseRWT = 0;
+      brandMultipliedRWT = 0;
+      lotteryMultipliedRWT = 0;
+      totalRWT = reqPlinkoResult.reward;
+    }
 
     console.log(`💰 RWT Calculation:
       - Amount: $${amount}
       - Base RWT: ${baseRWT}
       - Brand: ${brand}
-      - Multiplier: ${multiplier}x
+      - Brand Multiplier: ${multiplier}x
+      - Lottery Multiplier: ${lotteryMultiplier}x ${isLotteryTicket ? '🎰' : ''}
+      - Boost Multiplier: ${boostMultiplier}x
       - Total RWT: ${totalRWT}
     `);
 
-    // 5. Insert into Supabase with fraud detection data
+    // 6. Insert into Supabase with fraud detection data and boost info
     const { data: insertData, error: insertError } = await supabase
       .from("receipts")
       .insert({
@@ -223,7 +332,26 @@ export async function POST(req: NextRequest) {
         telegram_id,
         wallet_address,
         image_url,
-        metadata: { rawText },
+        metadata: {
+          rawText,
+          boost_multiplier: boostMultiplier,
+          boost_id: usedBoostId,
+          lottery_multiplier: lotteryMultiplier,
+          is_lottery_ticket: isLotteryTicket,
+          lottery_details: isLotteryTicket ? {
+            ticket_type: reqLotteryResult?.ticketType,
+            state: reqLotteryResult?.state,
+            ticket_number: reqLotteryResult?.ticketNumber,
+            game_name: reqLotteryResult?.gameName,
+            confidence: reqLotteryResult?.confidence
+          } : null,
+          plinko: reqPlinkoResult ? {
+            final_column: reqPlinkoResult.finalColumn,
+            reward: reqPlinkoResult.reward,
+            path: reqPlinkoResult.path,
+            hash: reqPlinkoHash
+          } : null
+        },
         receipt_hash: fraudCheck.receiptHash,
         fraud_score: fraudCheck.fraudScore,
         validation_status: fraudCheck.status,
@@ -240,7 +368,52 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 6. Log reward to user_rewards table
+    // 7. Update or create user_stats entry
+    const { data: existingStats } = await supabase
+      .from("user_stats")
+      .select("*")
+      .or(`user_email.eq.${user_email || 'null'},telegram_id.eq.${telegram_id || 'null'},wallet_address.eq.${wallet_address}`)
+      .single();
+
+    if (existingStats) {
+      // Update existing stats
+      const { error: updateError } = await supabase
+        .from("user_stats")
+        .update({
+          total_receipts: existingStats.total_receipts + 1,
+          total_rwt_earned: existingStats.total_rwt_earned + totalRWT,
+          average_rwt_per_receipt: (existingStats.total_rwt_earned + totalRWT) / (existingStats.total_receipts + 1),
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", existingStats.id);
+      
+      if (updateError) {
+        console.error("⚠️ Failed to update user_stats:", updateError.message);
+      } else {
+        console.log("✅ Updated user_stats for receipt");
+      }
+    } else {
+      // Create new stats entry
+      const { error: insertError } = await supabase
+        .from("user_stats")
+        .insert({
+          user_email,
+          telegram_id,
+          wallet_address,
+          total_receipts: 1,
+          total_rwt_earned: totalRWT,
+          average_rwt_per_receipt: totalRWT,
+          current_tier: 'Bronze'
+        });
+      
+      if (insertError) {
+        console.error("⚠️ Failed to create user_stats:", insertError.message);
+      } else {
+        console.log("✅ Created user_stats entry");
+      }
+    }
+
+    // 7b. Also log to user_rewards table for transaction history
     const { data: rewardData, error: rewardError } = await supabase
       .from("user_rewards")
       .insert({
@@ -252,6 +425,12 @@ export async function POST(req: NextRequest) {
         multiplier,
         total_reward: totalRWT,
         receipt_id: insertData[0].id,
+        plinko: reqPlinkoResult ? {
+          final_column: reqPlinkoResult.finalColumn,
+          reward: reqPlinkoResult.reward,
+          path: reqPlinkoResult.path,
+          hash: reqPlinkoHash
+        } : null
       })
       .select();
 
@@ -475,6 +654,12 @@ export async function POST(req: NextRequest) {
           total_rwt: totalRWT,
           brand,
         },
+        plinko: reqPlinkoResult ? {
+          final_column: reqPlinkoResult.finalColumn,
+          reward: reqPlinkoResult.reward,
+          path: reqPlinkoResult.path,
+          hash: reqPlinkoHash
+        } : null,
         blockchain: blockchainTx,
         referral: referralBonus,
         nfts: mintedNFTs.length > 0 ? mintedNFTs : undefined,

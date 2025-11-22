@@ -11,6 +11,9 @@ export default function TelegramInner() {
   const [telegramId, setTelegramId] = useState<string | null>(null)
   const [walletAddress, setWalletAddress] = useState<string | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
+  const [showShop, setShowShop] = useState<boolean>(false)
+  const [products, setProducts] = useState<any[]>([])
+  const [userEmail, setUserEmail] = useState<string | null>(null)
 
   // -----------------------------
   // 2. TELEGRAM INITIALIZATION & WALLET GENERATION
@@ -54,6 +57,24 @@ export default function TelegramInner() {
     }
     
     init()
+  }, [])
+
+  // -----------------------------
+  // 2B. LOAD PRODUCTS
+  // -----------------------------
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        const res = await fetch('/api/telegram/products')
+        const data = await res.json()
+        if (data.products) {
+          setProducts(data.products)
+        }
+      } catch (error) {
+        console.error('Failed to load products:', error)
+      }
+    }
+    loadProducts()
   }, [])
 
   // -----------------------------
@@ -128,7 +149,55 @@ export default function TelegramInner() {
   }
 
   // -----------------------------
-  // 4. UI RENDER
+  // 4. HANDLE PURCHASE
+  // -----------------------------
+  const handlePurchase = async (productKey: string) => {
+    if (!WebApp.initDataUnsafe?.user) {
+      alert('User data not available')
+      return
+    }
+
+    try {
+      // Create invoice
+      const res = await fetch('/api/telegram/invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          product_key: productKey,
+          user_email: userEmail,
+          telegram_id: telegramId,
+          wallet_address: walletAddress
+        })
+      })
+
+      const data = await res.json()
+      
+      if (!data.success) {
+        alert('Failed to create invoice: ' + (data.error || 'Unknown error'))
+        return
+      }
+
+      // Open Telegram payment UI
+      WebApp.openInvoice(data.invoice, (status: string) => {
+        if (status === 'paid') {
+          alert('🎉 Purchase successful! Your rewards have been activated.')
+          setShowShop(false)
+          // Refresh the page to show new rewards
+          window.location.reload()
+        } else if (status === 'cancelled') {
+          alert('Purchase cancelled')
+        } else if (status === 'failed') {
+          alert('Payment failed. Please try again.')
+        }
+      })
+    } catch (error) {
+      console.error('Purchase error:', error)
+      alert('Failed to initiate purchase')
+    }
+  }
+
+  // -----------------------------
+  // 5. UI RENDER
   // -----------------------------
   return (
     <main className="telegram-main min-h-screen flex flex-col items-center justify-center text-center p-10">
@@ -174,6 +243,67 @@ export default function TelegramInner() {
       >
         📸 Scan Receipt
       </label>
+
+      {/* Shop Button */}
+      <button
+        onClick={() => setShowShop(true)}
+        className="mt-4 px-8 py-3 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-xl text-gray-900 font-semibold hover:opacity-90 transition-all"
+      >
+        💎 Shop
+      </button>
+
+      {/* Shop Modal */}
+      {showShop && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1F2833] rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-white">💎 ReceiptX Shop</h2>
+              <button
+                onClick={() => setShowShop(false)}
+                className="text-gray-400 hover:text-white text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {products.map((product) => (
+                <div
+                  key={product.id}
+                  className="bg-[#0B0C10] rounded-lg p-4 border border-cyan-400/20 hover:border-cyan-400/40 transition-all"
+                >
+                  <h3 className="text-lg font-semibold text-white mb-2">
+                    {product.name}
+                  </h3>
+                  <p className="text-sm text-gray-400 mb-4">
+                    {product.description}
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <div className="text-yellow-400 font-bold">
+                      ⭐ {product.price_stars} Stars
+                      <span className="text-xs text-gray-500 ml-2">
+                        (${product.price_usd})
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handlePurchase(product.product_key)}
+                      className="px-4 py-2 bg-cyan-400 text-gray-900 rounded-lg font-semibold hover:bg-cyan-300 transition-all"
+                    >
+                      Buy Now
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {products.length === 0 && (
+              <p className="text-gray-400 text-center py-8">
+                No products available at the moment.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Telegram-specific info */}
       {telegramId && (

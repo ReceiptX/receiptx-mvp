@@ -1,0 +1,382 @@
+// lib/blockchain/receiptxToken.ts
+import { ethers } from 'ethers';
+
+const RECEIPTX_TOKEN_ADDRESS = process.env.RECEIPTX_TOKEN_ADDRESS as string;
+const SUPRA_EVM_RPC_URL = process.env.SUPRA_EVM_RPC_URL || process.env.NEXT_PUBLIC_SUPRA_EVM_RPC_URL as string;
+const OWNER_PRIVATE_KEY = process.env.RECEIPTX_OWNER_PRIVATE_KEY as string;
+
+// Minimal ABI for contract interaction
+const RECEIPTX_ABI = [
+  {
+    "inputs": [
+      { "internalType": "address", "name": "user", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "mintRWT",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "user", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "burnRWT",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "user", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "mintAIA",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "bytes32", "name": "hash", "type": "bytes32" }],
+    "name": "storeReceiptHash",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "bytes32", "name": "hash", "type": "bytes32" }],
+    "name": "isReceiptUsed",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "account", "type": "address" }],
+    "name": "getRwtBalance",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "account", "type": "address" }],
+    "name": "getAiaBalance",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "account", "type": "address" }],
+    "name": "getBalances",
+    "outputs": [
+      { "internalType": "uint256", "name": "rwt", "type": "uint256" },
+      { "internalType": "uint256", "name": "aia", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getRemainingAia",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "referrer", "type": "address" },
+      { "internalType": "address", "name": "referred", "type": "address" },
+      { "internalType": "bool", "name": "isMultiplierBrand", "type": "bool" }
+    ],
+    "name": "processReferralBonus",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "user", "type": "address" }],
+    "name": "hasReceivedReferralBonus",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  }
+];
+
+/**
+ * Get contract instance with signer (for write operations)
+ */
+function getContractWithSigner() {
+  if (!OWNER_PRIVATE_KEY) {
+    throw new Error('RECEIPTX_OWNER_PRIVATE_KEY not configured');
+  }
+  if (!RECEIPTX_TOKEN_ADDRESS) {
+    throw new Error('RECEIPTX_TOKEN_ADDRESS not configured');
+  }
+  
+  const provider = new ethers.JsonRpcProvider(SUPRA_EVM_RPC_URL);
+  const wallet = new ethers.Wallet(OWNER_PRIVATE_KEY, provider);
+  return new ethers.Contract(RECEIPTX_TOKEN_ADDRESS, RECEIPTX_ABI, wallet);
+}
+
+/**
+ * Get contract instance for read operations only
+ */
+function getContractReadOnly() {
+  if (!RECEIPTX_TOKEN_ADDRESS) {
+    throw new Error('RECEIPTX_TOKEN_ADDRESS not configured');
+  }
+  
+  const provider = new ethers.JsonRpcProvider(SUPRA_EVM_RPC_URL);
+  return new ethers.Contract(RECEIPTX_TOKEN_ADDRESS, RECEIPTX_ABI, provider);
+}
+
+/**
+ * Mint RWT tokens to a user
+ * @param userAddress User's wallet address
+ * @param amount Amount of RWT to mint (in wei, use ethers.parseUnits for conversion)
+ * @returns Transaction hash
+ */
+export async function mintRWT(
+  userAddress: string,
+  amount: bigint
+): Promise<{ success: boolean; txHash: string; error?: string }> {
+  try {
+    const contract = getContractWithSigner();
+    
+    console.log(`[ReceiptX] Minting ${amount} RWT to ${userAddress}`);
+    
+    const tx = await contract.mintRWT(userAddress, amount);
+    console.log(`[ReceiptX] Transaction sent: ${tx.hash}`);
+    
+    await tx.wait();
+    console.log(`[ReceiptX] Transaction confirmed: ${tx.hash}`);
+    
+    return { success: true, txHash: tx.hash };
+  } catch (error: any) {
+    console.error('[ReceiptX] Mint RWT failed:', error);
+    return { 
+      success: false, 
+      txHash: '', 
+      error: error.message || 'Failed to mint RWT' 
+    };
+  }
+}
+
+/**
+ * Mint AIA (AI Agent) tokens to a user
+ * @param userAddress User's wallet address
+ * @param amount Amount of AIA to mint
+ * @returns Transaction hash
+ */
+export async function mintAIA(
+  userAddress: string,
+  amount: bigint
+): Promise<{ success: boolean; txHash: string; error?: string }> {
+  try {
+    const contract = getContractWithSigner();
+    
+    console.log(`[ReceiptX] Minting ${amount} AIA to ${userAddress}`);
+    
+    const tx = await contract.mintAIA(userAddress, amount);
+    console.log(`[ReceiptX] Transaction sent: ${tx.hash}`);
+    
+    await tx.wait();
+    console.log(`[ReceiptX] Transaction confirmed: ${tx.hash}`);
+    
+    return { success: true, txHash: tx.hash };
+  } catch (error: any) {
+    console.error('[ReceiptX] Mint AIA failed:', error);
+    return { 
+      success: false, 
+      txHash: '', 
+      error: error.message || 'Failed to mint AIA' 
+    };
+  }
+}
+
+/**
+ * Get user's RWT balance
+ * @param userAddress User's wallet address
+ * @returns RWT balance in wei
+ */
+export async function getRwtBalance(userAddress: string): Promise<bigint> {
+  try {
+    const contract = getContractReadOnly();
+    const balance = await contract.getRwtBalance(userAddress);
+    return balance;
+  } catch (error) {
+    console.error('[ReceiptX] Get RWT balance failed:', error);
+    return BigInt(0);
+  }
+}
+
+/**
+ * Get user's AIA balance
+ * @param userAddress User's wallet address
+ * @returns AIA balance
+ */
+export async function getAiaBalance(userAddress: string): Promise<bigint> {
+  try {
+    const contract = getContractReadOnly();
+    const balance = await contract.getAiaBalance(userAddress);
+    return balance;
+  } catch (error) {
+    console.error('[ReceiptX] Get AIA balance failed:', error);
+    return BigInt(0);
+  }
+}
+
+/**
+ * Get both RWT and AIA balances in one call
+ * @param userAddress User's wallet address
+ * @returns Object with rwt and aia balances
+ */
+export async function getBalances(userAddress: string): Promise<{ rwt: bigint; aia: bigint }> {
+  try {
+    const contract = getContractReadOnly();
+    const [rwt, aia] = await contract.getBalances(userAddress);
+    return { rwt, aia };
+  } catch (error) {
+    console.error('[ReceiptX] Get balances failed:', error);
+    return { rwt: BigInt(0), aia: BigInt(0) };
+  }
+}
+
+/**
+ * Burn RWT tokens from a user
+ */
+export async function burnRWT(
+  userAddress: string,
+  amount: bigint
+): Promise<{ success: boolean; txHash: string; error?: string }> {
+  try {
+    const contract = getContractWithSigner();
+    
+    console.log(`[ReceiptX] Burning ${amount} RWT from ${userAddress}`);
+    
+    const tx = await contract.burnRWT(userAddress, amount);
+    console.log(`[ReceiptX] Transaction sent: ${tx.hash}`);
+    
+    await tx.wait();
+    console.log(`[ReceiptX] Transaction confirmed: ${tx.hash}`);
+    
+    return { success: true, txHash: tx.hash };
+  } catch (error: any) {
+    console.error('[ReceiptX] Burn RWT failed:', error);
+    return { 
+      success: false, 
+      txHash: '', 
+      error: error.message || 'Failed to burn RWT' 
+    };
+  }
+}
+
+/**
+ * Store a receipt hash on-chain to prevent duplicate submissions
+ */
+export async function storeReceiptHash(
+  receiptHash: string
+): Promise<{ success: boolean; txHash: string; error?: string }> {
+  try {
+    const contract = getContractWithSigner();
+    
+    console.log(`[ReceiptX] Storing receipt hash: ${receiptHash}`);
+    
+    const tx = await contract.storeReceiptHash(receiptHash);
+    console.log(`[ReceiptX] Transaction sent: ${tx.hash}`);
+    
+    await tx.wait();
+    console.log(`[ReceiptX] Transaction confirmed: ${tx.hash}`);
+    
+    return { success: true, txHash: tx.hash };
+  } catch (error: any) {
+    console.error('[ReceiptX] Store receipt hash failed:', error);
+    return { 
+      success: false, 
+      txHash: '', 
+      error: error.message || 'Failed to store receipt hash' 
+    };
+  }
+}
+
+/**
+ * Check if a receipt hash has already been used
+ */
+export async function isReceiptUsed(receiptHash: string): Promise<boolean> {
+  try {
+    const contract = getContractReadOnly();
+    return await contract.isReceiptUsed(receiptHash);
+  } catch (error) {
+    console.error('[ReceiptX] Check receipt hash failed:', error);
+    return false;
+  }
+}
+
+/**
+ * Get remaining AIA tokens that can be minted
+ */
+export async function getRemainingAia(): Promise<bigint> {
+  try {
+    const contract = getContractReadOnly();
+    return await contract.getRemainingAia();
+  } catch (error) {
+    console.error('[ReceiptX] Get remaining AIA failed:', error);
+    return BigInt(0);
+  }
+}
+
+/**
+ * Process referral bonus when a referred user uploads their first verified receipt
+ */
+export async function processReferralBonus(
+  referrerAddress: string,
+  referredAddress: string,
+  isMultiplierBrand: boolean
+): Promise<{ success: boolean; txHash: string; aiaAmount: number; error?: string }> {
+  try {
+    const contract = getContractWithSigner();
+    
+    const aiaAmount = isMultiplierBrand ? 10 : 5;
+    console.log(`[ReceiptX] Processing referral bonus: ${aiaAmount} AIA to ${referrerAddress}`);
+    
+    const tx = await contract.processReferralBonus(referrerAddress, referredAddress, isMultiplierBrand);
+    console.log(`[ReceiptX] Transaction sent: ${tx.hash}`);
+    
+    await tx.wait();
+    console.log(`[ReceiptX] Transaction confirmed: ${tx.hash}`);
+    
+    return { success: true, txHash: tx.hash, aiaAmount };
+  } catch (error: any) {
+    console.error('[ReceiptX] Process referral bonus failed:', error);
+    return { 
+      success: false, 
+      txHash: '', 
+      aiaAmount: 0,
+      error: error.message || 'Failed to process referral bonus' 
+    };
+  }
+}
+
+/**
+ * Check if a user has already received their referral bonus
+ */
+export async function hasReceivedReferralBonus(userAddress: string): Promise<boolean> {
+  try {
+    const contract = getContractReadOnly();
+    return await contract.hasReceivedReferralBonus(userAddress);
+  } catch (error) {
+    console.error('[ReceiptX] Check referral bonus status failed:', error);
+    return false;
+  }
+}
+
+/**
+ * Check if the contract is properly configured
+ */
+export function isContractConfigured(): boolean {
+  return Boolean(
+    RECEIPTX_TOKEN_ADDRESS && 
+    SUPRA_EVM_RPC_URL && 
+    OWNER_PRIVATE_KEY
+  );
+}

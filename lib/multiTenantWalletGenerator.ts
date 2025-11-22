@@ -106,9 +106,8 @@ export class MultiTenantWalletGenerator {
   }
 
   private async collectUserEntropy(ctx: UserContext): Promise<Uint8Array> {
-    const { EntropyEngine } = await import("./entropyEngine");
-    const engine = new EntropyEngine();
-    return engine.getEntropyBuffer();
+    // EntropyEngine is disabled for MVP/Netlify build
+    return new Uint8Array(0);
   }
 
   private async createWalletInstance(privateKey: string): Promise<WalletInstance> {

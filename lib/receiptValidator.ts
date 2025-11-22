@@ -24,16 +24,23 @@ export class ReceiptValidator {
   /**
    * Cryptographic receipt hashing for duplicate detection
    * Creates deterministic hash from receipt content (not image pixels)
+   * Uses image_hash to detect exact duplicate uploads regardless of submission date
    */
   static generateReceiptHash(receipt: ReceiptData): string {
     const crypto = require('crypto');
     
-    // Normalize data to prevent hash manipulation
+    // Use image hash as primary identifier - catches exact duplicate images
+    // Even if uploaded on different dates, same receipt image = same hash
+    if (receipt.image_hash) {
+      return receipt.image_hash; // Already a SHA-256 hash from OCR processor
+    }
+    
+    // Fallback: Generate hash from content (merchant + amount)
+    // NOTE: Intentionally excludes date to catch resubmissions
     const normalized = {
       merchant: receipt.merchant_name.toLowerCase().trim(),
       amount: parseFloat(receipt.total_amount.toFixed(2)),
-      date: receipt.timestamp.substring(0, 10), // Date only
-      // Don't include OCR text (too variable)
+      // Don't include date - same receipt uploaded twice should have same hash
     };
     
     const hashInput = JSON.stringify(normalized);
@@ -169,6 +176,7 @@ export class ReceiptValidator {
     userEmail?: string;
     telegramId?: string;
     imageUrl: string;
+    imageHash?: string; // SHA-256 hash of the actual image file
   }): Promise<{
     status: 'approved' | 'flagged' | 'rejected';
     receiptHash: string;
@@ -183,7 +191,7 @@ export class ReceiptValidator {
       total_amount: params.totalAmount,
       merchant_name: params.merchantName,
       timestamp: params.purchaseDate,
-      image_hash: params.imageUrl // Using URL as identifier
+      image_hash: params.imageHash || params.imageUrl // Use SHA-256 hash if provided, fallback to URL
     });
 
     // Return standardized response

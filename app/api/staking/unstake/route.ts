@@ -61,17 +61,17 @@ export async function POST(request: NextRequest) {
 
     await updateTierQuery;
 
-    // Return AIA to available balance
-    let balanceQuery = supabase.from("user_rewards").select("aia_balance");
-    if (user_email) balanceQuery = balanceQuery.eq("email", user_email);
+    // Return AIA to available balance in user_stats
+    let balanceQuery = supabase.from("user_stats").select("total_aia_earned");
+    if (user_email) balanceQuery = balanceQuery.eq("user_email", user_email);
     else if (telegram_id) balanceQuery = balanceQuery.eq("telegram_id", telegram_id);
     else balanceQuery = balanceQuery.eq("wallet_address", wallet_address);
 
     const { data: balance } = await balanceQuery.single();
-    const newAiaBalance = (balance?.aia_balance || 0) + amount;
+    const newAiaBalance = (balance?.total_aia_earned || 0) + amount;
 
-    let updateBalanceQuery = supabase.from("user_rewards").update({ aia_balance: newAiaBalance });
-    if (user_email) updateBalanceQuery = updateBalanceQuery.eq("email", user_email);
+    let updateBalanceQuery = supabase.from("user_stats").update({ total_aia_earned: newAiaBalance });
+    if (user_email) updateBalanceQuery = updateBalanceQuery.eq("user_email", user_email);
     else if (telegram_id) updateBalanceQuery = updateBalanceQuery.eq("telegram_id", telegram_id);
     else updateBalanceQuery = updateBalanceQuery.eq("wallet_address", wallet_address);
 

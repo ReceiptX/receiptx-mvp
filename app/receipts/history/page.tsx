@@ -6,14 +6,12 @@ import { useRouter } from "next/navigation";
 
 interface Receipt {
   id: string;
-  merchant_name: string;
-  total_amount: number;
-  receipt_date: string;
+  brand: string;
+  amount: number;
   rwt_earned: number;
-  brand_multiplier: number;
+  multiplier: number;
   created_at: string;
-  ocr_status: string;
-  receipt_image_url?: string;
+  image_url?: string;
 }
 
 export default function ReceiptHistoryPage() {
@@ -87,7 +85,7 @@ export default function ReceiptHistoryPage() {
   }
 
   const totalRwt = receipts.reduce((sum, r) => sum + (r.rwt_earned || 0), 0);
-  const totalSpent = receipts.reduce((sum, r) => sum + (r.total_amount || 0), 0);
+  const totalSpent = receipts.reduce((sum, r) => sum + (r.amount || 0), 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4 md:p-8">
@@ -153,7 +151,7 @@ export default function ReceiptHistoryPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="text-xl font-bold text-white">
-                          {receipt.merchant_name}
+                          {receipt.brand}
                         </h3>
                         {receipt.brand_multiplier > 1 && (
                           <span className="bg-yellow-500 text-black text-xs px-2 py-1 rounded font-semibold">
@@ -176,7 +174,7 @@ export default function ReceiptHistoryPage() {
                         <div>
                           <p className="text-gray-400">Amount</p>
                           <p className="text-white font-semibold">
-                            ${receipt.total_amount.toFixed(2)}
+                            ${receipt.amount.toFixed(2)}
                           </p>
                         </div>
                         <div>
@@ -188,7 +186,7 @@ export default function ReceiptHistoryPage() {
                         <div>
                           <p className="text-gray-400">Receipt Date</p>
                           <p className="text-white font-semibold">
-                            {new Date(receipt.receipt_date).toLocaleDateString()}
+                            {new Date(receipt.created_at).toLocaleDateString()}
                           </p>
                         </div>
                         <div>
