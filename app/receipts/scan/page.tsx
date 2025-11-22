@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { usePrivy } from '@privy-io/react-auth';
 
 export default function ReceiptScanPage() {
   const [preview, setPreview] = useState<string | null>(null)
@@ -8,6 +9,14 @@ export default function ReceiptScanPage() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const { authenticated, ready } = usePrivy();
+
+  useEffect(() => {
+    if (ready && authenticated && inputRef.current && !file) {
+      inputRef.current.click();
+    }
+  }, [ready, authenticated, file]);
 
   const handleFile = (event: any) => {
     const f = event.target.files?.[0]
@@ -77,6 +86,7 @@ export default function ReceiptScanPage() {
             <p className="text-sm text-cyan-100 mt-1">Use your camera</p>
           </div>
           <input
+            ref={inputRef}
             type="file"
             accept="image/*"
             capture="environment"
