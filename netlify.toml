@@ -1,28 +1,10 @@
 [build]
-  command = "npm install && npm run build"
+  command = "npm run build"
   publish = ".next"
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF ."
 
 [build.environment]
   NODE_VERSION = "20.18.0"
-  NPM_FLAGS = "--legacy-peer-deps"
-  ENABLE_BLOCKCHAIN = "false"
-  SECRETS_SCAN_OMIT_PATHS = "DEPLOYMENT_GUIDE.md,NETLIFY_DEPLOY.md,SETUP_SUPABASE_NOW.md,*.md"
-  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_PRIVY_APP_ID"
+  # Removed unnecessary environment variables for minimal configuration
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
-  from = "/*"
-  to = "/.netlify/functions/___netlify-handler"
-  status = 200
-
-# Security headers
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "DENY"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    X-XSS-Protection = "1; mode=block"
-    Permissions-Policy = "camera=*, microphone=(), geolocation=()"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://esm.sh https://*.privy.io; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://*.privy.io https://api.ocr.space wss://*.supabase.co; frame-src 'self' https://*.privy.io; worker-src 'self' blob:;"
