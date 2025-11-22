@@ -1,23 +1,17 @@
-[build.environment]
-  NODE_VERSION = "20.18.0"
-# Netlify Configuration for ReceiptX
 [build]
   command = "npm install && npm run build"
   publish = ".next"
   ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF ."
 
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
-
 [build.environment]
-  NODE_VERSION = "20.9.0"
+  NODE_VERSION = "20.18.0"
   NPM_FLAGS = "--legacy-peer-deps"
   ENABLE_BLOCKCHAIN = "false"
   SECRETS_SCAN_OMIT_PATHS = "DEPLOYMENT_GUIDE.md,NETLIFY_DEPLOY.md,SETUP_SUPABASE_NOW.md,*.md"
   SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_PRIVY_APP_ID"
 
-# Redirect all requests to Next.js
-[[redirects]]
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
   from = "/*"
   to = "/.netlify/functions/___netlify-handler"
   status = 200
