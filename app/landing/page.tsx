@@ -36,20 +36,30 @@ export default function Landing() {
               Scan receipts, earn RWT tokens, redeem exclusive rewards. Complete NFT milestones and stake AIA for multiplier bonuses.
             </p>
 
-            <div className="mt-8 flex gap-4">
-              <Link
-                href="#features"
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-400 to-violet-500 text-slate-900 font-semibold shadow-lg shadow-cyan-500/30"
-              >
-                Explore Features
+            <div className="mt-8 flex flex-col gap-4 w-full max-w-xs">
+              <Link href="/dashboard">
+                <button className="w-full px-6 py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:opacity-90 transition-all text-xl font-bold shadow-lg">
+                  🚀 Start Earning RWT
+                </button>
               </Link>
-
-              <Link
-                href="/"
-                className="px-6 py-3 rounded-xl border border-white/20 text-white hover:border-cyan-400/60 transition"
-              >
-                Try the App
+              <Link href="/multipliers">
+                <button className="w-full px-6 py-4 rounded-xl bg-gradient-to-r from-yellow-400 to-orange-500 hover:opacity-90 transition-all text-xl font-bold shadow-lg">
+                  💎 Buy Multipliers
+                </button>
               </Link>
+            </div>
+            <div className="mt-8 w-full max-w-xs">
+              <form /* TODO: implement /api/waitlist endpoint */ className="flex flex-col gap-2 items-center">
+                <input
+                  type="email"
+                  placeholder="Get updates & bonuses (email)"
+                  className="px-4 py-2 rounded w-full text-black"
+                  required
+                />
+                <button type="submit" className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded font-semibold w-full">
+                  Join Updates & Bonuses
+                </button>
+              </form>
             </div>
           </motion.div>
 

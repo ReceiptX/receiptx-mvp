@@ -18,12 +18,31 @@ export default function ReceiptScanPage() {
     }
   }, [ready, authenticated, file]);
 
-  const handleFile = (event: any) => {
-    const f = event.target.files?.[0]
-    if (!f) return
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  const ALLOWED_TYPES = [
+    'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic'
+  ];
 
-    setFile(f)
-    setPreview(URL.createObjectURL(f))
+  const handleFile = (event: any) => {
+    const f = event.target.files?.[0];
+    if (!f) return;
+
+    if (f.size > MAX_FILE_SIZE) {
+      setError('File too large. Maximum size is 10MB.');
+      setFile(null);
+      setPreview(null);
+      return;
+    }
+    if (!ALLOWED_TYPES.includes(f.type)) {
+      setError('Unsupported file type. Only images (JPEG, PNG, WebP, HEIC) are allowed.');
+      setFile(null);
+      setPreview(null);
+      return;
+    }
+
+    setError(null);
+    setFile(f);
+    setPreview(URL.createObjectURL(f));
   }
 
   const submitReceipt = async () => {
@@ -72,7 +91,8 @@ export default function ReceiptScanPage() {
       <h1 className="text-3xl font-bold text-cyan-400 mb-4">Scan Your Receipt</h1>
 
       <p className="text-gray-400 mb-6">
-        Take a photo or upload an image of your receipt to earn RWT tokens!
+        Take a photo or upload an image of your receipt to earn RWT tokens!<br />
+        <span className="text-xs text-cyan-300">Max file size: 10MB. Supported formats: JPEG, PNG, WebP, HEIC.</span>
       </p>
 
       {/* File Upload Options */}
@@ -88,7 +108,7 @@ export default function ReceiptScanPage() {
           <input
             ref={inputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,application/pdf"
             capture="environment"
             onChange={handleFile}
             className="hidden"
@@ -105,7 +125,7 @@ export default function ReceiptScanPage() {
           </div>
           <input
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,application/pdf"
             onChange={handleFile}
             className="hidden"
           />

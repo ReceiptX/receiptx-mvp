@@ -39,6 +39,7 @@ interface Receipt {
   created_at: string;
 }
 
+
 interface UserStats {
   rwtBalance: number;
   aiaBalance: number;
@@ -47,12 +48,20 @@ interface UserStats {
   recentReceipts: Receipt[];
   referralCode: string;
   referralLink: string;
+  activeMultiplier?: {
+    active: boolean;
+    multiplier: number;
+    product_slug: string;
+    expires_at: string | null;
+    purchased_at: string | null;
+  };
 }
 
 export default function DashboardPage() {
   const { user, authenticated, ready } = usePrivy();
   const router = useRouter();
   const [stats, setStats] = useState<UserStats | null>(null);
+  const [multiplierLoading, setMultiplierLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -62,6 +71,7 @@ export default function DashboardPage() {
       router.push("/");
     }
   }, [ready, authenticated, router]);
+
 
   useEffect(() => {
     if (authenticated && user) {
@@ -83,26 +93,25 @@ export default function DashboardPage() {
       if (telegramId) params.set("telegram_id", telegramId.toString());
       if (walletAddress) params.set("wallet_address", walletAddress);
 
-      // Fetch all data in parallel
-      const [balancesRes, comprehensiveRes, nftsRes, receiptsRes, referralCodeRes] = await Promise.all([
+      // Fetch all data in parallel (add multiplier fetch)
+      const [balancesRes, comprehensiveRes, nftsRes, receiptsRes, referralCodeRes, multiplierRes] = await Promise.all([
         fetch(`/api/rewards/balance?${params}`),
         fetch(`/api/stats/comprehensive?${params}`),
         fetch(`/api/nfts/list?${params}&status=active`),
         fetch(`/api/receipts/history?${params}&limit=5`),
-        fetch(`/api/referrals/create?${params}`)
+        fetch(`/api/referrals/create?${params}`),
+        fetch(`/api/multipliers/active?${params}`)
       ]);
 
-      const [balances, comprehensive, nftsData, receiptsData, referralCode] = await Promise.all([
+      const [balances, comprehensive, nftsData, receiptsData, referralCode, multiplierData] = await Promise.all([
         balancesRes.json(),
         comprehensiveRes.json(),
         nftsRes.json(),
         receiptsRes.json(),
-        referralCodeRes.json()
+        referralCodeRes.json(),
+        multiplierRes.json()
       ]);
 
-      console.log("Balance data:", balances);
-      console.log("Comprehensive stats:", comprehensive);
-      
       setStats({
         rwtBalance: balances.success ? (balances.rwtBalance || 0) : 0,
         aiaBalance: balances.success ? (balances.aiaBalance || 0) : 0,
@@ -110,13 +119,15 @@ export default function DashboardPage() {
         nfts: nftsData.success ? nftsData.nfts : [],
         recentReceipts: receiptsData.success ? receiptsData.receipts : [],
         referralCode: referralCode.referral_code || "",
-        referralLink: referralCode.referral_link || ""
+        referralLink: referralCode.referral_link || "",
+        activeMultiplier: multiplierData.active ? multiplierData : undefined
       });
     } catch (err: any) {
       console.error("Error fetching stats:", err);
       setError(err.message || "Failed to load dashboard");
     } finally {
       setLoading(false);
+      setMultiplierLoading(false);
     }
   };
 
@@ -158,6 +169,22 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
+                  {/* Active Multiplier Banner */}
+                  {multiplierLoading ? null : stats?.activeMultiplier && stats.activeMultiplier.active && (
+                    <div className="mb-8 p-4 rounded-xl bg-gradient-to-r from-yellow-400 to-orange-500 text-black flex flex-col md:flex-row md:items-center md:justify-between shadow-lg">
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl">⚡</span>
+                        <span className="font-bold text-xl">Active Multiplier:</span>
+                        <span className="font-bold text-2xl">{stats.activeMultiplier.multiplier}x</span>
+                        <span className="ml-2 text-sm font-semibold bg-white/30 px-2 py-1 rounded">{stats.activeMultiplier.product_slug.replace('multiplier_', '').replace('_', '.')} Stars</span>
+                      </div>
+                      {stats.activeMultiplier.expires_at && (
+                        <div className="mt-2 md:mt-0 text-sm font-medium">
+                          Expires: {new Date(stats.activeMultiplier.expires_at).toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+                  )}
           <div>
             <h1 className="text-4xl font-bold text-white mb-2">Dashboard</h1>
             <p className="text-gray-300">

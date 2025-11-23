@@ -55,7 +55,7 @@ if (process.env.ENABLE_BLOCKCHAIN === 'true' && !isVercel) {
 export const runtime = "nodejs";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic'];
+const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'application/pdf'];
 
 export async function POST(req: NextRequest) {
   try {
@@ -88,10 +88,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
+
     // Validate file type
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
-        { success: false, error: "Invalid file type. Only images (JPEG, PNG, WebP, HEIC) are allowed." },
+        { success: false, error: "Invalid file type. Only images (JPEG, PNG, WebP, HEIC) and PDFs are allowed." },
         { status: 400, headers: getRateLimitHeaders(rateLimit) }
       );
     }
@@ -104,39 +105,66 @@ export async function POST(req: NextRequest) {
       );
     }
 
+
     // Convert File → Buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    
-    // Generate image hash for fraud detection
-    const imageHash = crypto.createHash('sha256').update(buffer).digest('hex');
+
+    // Generate file hash for fraud detection
+    const fileHash = crypto.createHash('sha256').update(buffer).digest('hex');
 
     // 1. Upload to Supabase Storage
     const filePath = `receipts/${Date.now()}-${file.name}`;
-
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from("receipts")
       .upload(filePath, buffer, {
         contentType: file.type,
       });
-
     if (uploadError) {
       return NextResponse.json(
         { success: false, error: uploadError.message },
         { status: 500 }
       );
     }
-
     const image_url = supabase.storage
       .from("receipts")
       .getPublicUrl(filePath).data.publicUrl;
 
-    // 2. Run OCR
-    const ocrResult = await processImageOCR(buffer);
+    let rawText = "";
+    let ocrResult = { text: "", confidence: 0.9 };
+    if (file.type === 'application/pdf') {
+      // PDF: extract text using pdf-parse (must be installed)
+      try {
+        const pdfParse = require('pdf-parse');
+        const pdfData = await pdfParse(buffer);
+        rawText = pdfData.text || "";
+        ocrResult.text = rawText;
+        ocrResult.confidence = 0.9;
+      } catch (err) {
+        return NextResponse.json(
+          { success: false, error: "Failed to extract text from PDF. Please upload a clear scan." },
+          { status: 400 }
+        );
+      }
+    } else {
+      // Image: use OCR as before
+      ocrResult = await processImageOCR(buffer);
+      rawText = ocrResult.text;
+    }
 
-    const rawText = ocrResult.text;
-    
-    console.log("📄 OCR Text extracted:", rawText.slice(0, 200));
+    // Basic receipt keyword detection for PDFs and images
+    const receiptKeywords = [
+      'total', 'date', 'store', 'amount', 'tax', 'cashier', 'change', 'receipt', 'item', 'qty', 'balance', 'payment', 'transaction'
+    ];
+    const foundKeywords = receiptKeywords.filter(k => rawText.toLowerCase().includes(k));
+    if (foundKeywords.length < 2) {
+      return NextResponse.json(
+        { success: false, error: "This file does not appear to be a real receipt. Please upload a valid store receipt." },
+        { status: 400 }
+      );
+    }
+
+    console.log("📄 OCR/PDF Text extracted:", rawText.slice(0, 200));
 
     // 3. Extract non-personal data
     // Look for common receipt total patterns (supports both US and European formats)
@@ -263,10 +291,44 @@ export async function POST(req: NextRequest) {
       hash: fraudCheck.receiptHash
     });
 
+
     // 4. Check for active boosts (Golden Receipt, time-limited multipliers)
     let boostMultiplier = 1.0;
     let usedBoostId: string | null = null;
 
+    // --- Telegram Stars Multiplier Logic ---
+    let starsMultiplier = 1.0;
+    let starsMultiplierSlug: string | null = null;
+    let starsMultiplierExpires: string | null = null;
+    try {
+      // Try to find an active multiplier purchased via Telegram Stars
+      let userMultipliersQuery = supabase
+        .from("user_multipliers")
+        .select("*")
+        .eq("active", true)
+        .or(`user_id.eq.${user_email || telegram_id || wallet_address}`)
+        .or("expires_at.is.null,expires_at.gt." + new Date().toISOString());
+      const { data: multipliers, error: multipliersError } = await userMultipliersQuery;
+      if (!multipliersError && multipliers && multipliers.length > 0) {
+        // Pick the highest multiplier (by product_slug)
+        // Example product_slug: 'multiplier_1_5x', 'multiplier_2x', 'multiplier_3x'
+        const parseMultiplier = (slug: string) => {
+          const match = slug.match(/(\d+(_\d+)?)/);
+          if (!match) return 1.0;
+          return parseFloat(match[0].replace('_', '.'));
+        };
+        multipliers.sort((a, b) => parseMultiplier(b.product_slug) - parseMultiplier(a.product_slug));
+        const active = multipliers[0];
+        starsMultiplier = parseMultiplier(active.product_slug);
+        starsMultiplierSlug = active.product_slug;
+        starsMultiplierExpires = active.expires_at;
+        console.log(`🚀 Active Telegram Stars multiplier: ${starsMultiplier}x (slug: ${starsMultiplierSlug})`);
+      }
+    } catch (err) {
+      console.error("Failed to fetch user_multipliers:", err);
+    }
+
+    // --- Legacy boost logic (Golden Receipt, etc) ---
     const { data: activeBoosts, error: boostError } = await supabase
       .from("user_boosts")
       .select("*")
@@ -292,16 +354,17 @@ export async function POST(req: NextRequest) {
             active: newUses > 0
           })
           .eq("id", boost.id);
-        
         console.log(`✅ Golden Receipt used (${newUses} uses remaining)`);
       }
     }
 
-    // 5. Calculate RWT rewards (with lottery + brand + boost multipliers)
+
+    // 5. Calculate RWT rewards (with all multipliers: brand, lottery, boost, Telegram Stars)
     let baseRWT = amount * BASE_RWT_PER_CURRENCY_UNIT; // $1 = 1 RWT base
     let brandMultipliedRWT = baseRWT * multiplier;
     let lotteryMultipliedRWT = brandMultipliedRWT * lotteryMultiplier; // Apply lottery multiplier
-    let totalRWT = Math.round(lotteryMultipliedRWT * boostMultiplier);
+    // Apply both boostMultiplier and starsMultiplier (multiplicative)
+    let totalRWT = Math.round(lotteryMultipliedRWT * boostMultiplier * starsMultiplier);
     // If Plinko triggered, override RWT with Plinko reward
     if (reqPlinkoResult) {
       baseRWT = 0;
@@ -310,6 +373,7 @@ export async function POST(req: NextRequest) {
       totalRWT = reqPlinkoResult.reward;
     }
 
+
     console.log(`💰 RWT Calculation:
       - Amount: $${amount}
       - Base RWT: ${baseRWT}
@@ -317,10 +381,12 @@ export async function POST(req: NextRequest) {
       - Brand Multiplier: ${multiplier}x
       - Lottery Multiplier: ${lotteryMultiplier}x ${isLotteryTicket ? '🎰' : ''}
       - Boost Multiplier: ${boostMultiplier}x
+      - Telegram Stars Multiplier: ${starsMultiplier}x
       - Total RWT: ${totalRWT}
     `);
 
-    // 6. Insert into Supabase with fraud detection data and boost info
+
+    // 6. Insert into Supabase with fraud detection data, boost info, and Telegram Stars multiplier info
     const { data: insertData, error: insertError } = await supabase
       .from("receipts")
       .insert({
@@ -336,6 +402,9 @@ export async function POST(req: NextRequest) {
           rawText,
           boost_multiplier: boostMultiplier,
           boost_id: usedBoostId,
+          stars_multiplier: starsMultiplier,
+          stars_multiplier_slug: starsMultiplierSlug,
+          stars_multiplier_expires: starsMultiplierExpires,
           lottery_multiplier: lotteryMultiplier,
           is_lottery_ticket: isLotteryTicket,
           lottery_details: isLotteryTicket ? {
