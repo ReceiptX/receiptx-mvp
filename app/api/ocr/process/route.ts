@@ -18,37 +18,31 @@ import {
   recordLotteryTicket 
 } from "@/lib/lotteryDetector";
 
-// Optional blockchain integration (EVM smart contract)
-// Note: Blockchain modules are disabled (.ts.disabled) for MVP launch
-// Database-only token tracking is used instead
-// Blockchain/proprietary modules are disabled for MVP/Netlify build
-// let mintRWT: any = null;
-// let isContractConfigured: any = null;
-// let processReferralBonus: any = null;
-// let hasReceivedReferralBonus: any = null;
+
+// Blockchain integration: only load at runtime if enabled and not on Vercel
 let mintRWT: any = null;
 let isContractConfigured: any = null;
 let processReferralBonus: any = null;
 let hasReceivedReferralBonus: any = null;
 
-// Skip blockchain imports during build (files are .disabled) or on Vercel
-const isVercel = process.env.VERCEL === '1';
-if (process.env.ENABLE_BLOCKCHAIN === 'true' && !isVercel) {
-  try {
-    const fs = require('fs');
-    const path = require('path');
-    const tokenPath = path.resolve(__dirname, '../../lib/blockchain/receiptxToken.js');
-    if (fs.existsSync(tokenPath)) {
-      const receiptxToken = require(tokenPath);
-      mintRWT = receiptxToken.mintRWT;
-      isContractConfigured = receiptxToken.isContractConfigured;
-      processReferralBonus = receiptxToken.processReferralBonus;
-      hasReceivedReferralBonus = receiptxToken.hasReceivedReferralBonus;
-    } else {
+function loadBlockchainIntegration() {
+  if (process.env.ENABLE_BLOCKCHAIN === 'true' && process.env.VERCEL !== '1') {
+    try {
+      const fs = eval('require')("fs");
+      const path = eval('require')("path");
+      const tokenPath = path.resolve(__dirname, '../../lib/blockchain/receiptxToken.js');
+      if (fs.existsSync(tokenPath)) {
+        const receiptxToken = eval('require')(tokenPath);
+        mintRWT = receiptxToken.mintRWT;
+        isContractConfigured = receiptxToken.isContractConfigured;
+        processReferralBonus = receiptxToken.processReferralBonus;
+        hasReceivedReferralBonus = receiptxToken.hasReceivedReferralBonus;
+      } else {
+        console.log("ℹ️ Blockchain integration disabled (receiptxToken not found)");
+      }
+    } catch (e) {
       console.log("ℹ️ Blockchain integration disabled (receiptxToken not found)");
     }
-  } catch (e) {
-    console.log("ℹ️ Blockchain integration disabled (receiptxToken not found)");
   }
 }
 
@@ -58,6 +52,8 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'application/pdf'];
 
 export async function POST(req: NextRequest) {
+  // Load blockchain integration at runtime only
+  loadBlockchainIntegration();
   try {
     // Rate limiting by IP
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 

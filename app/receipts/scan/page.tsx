@@ -1,6 +1,42 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+
+// ReceiptX SVG Logo (site-matching gradient)
+const ReceiptXLogo = () => (
+  <svg
+    width="180"
+    height="76"
+    viewBox="0 0 900 380"
+    className="mb-6 drop-shadow-xl"
+    style={{ display: 'block', margin: '0 auto', maxWidth: '320px', height: 'auto' }}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <defs>
+      <linearGradient id="rxSiteGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#22d3ee"/>
+        <stop offset="50%" stopColor="#6366f1"/>
+        <stop offset="100%" stopColor="#a21caf"/>
+      </linearGradient>
+      <radialGradient id="softHalo" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.18"/>
+        <stop offset="100%" stopColor="#a21caf" stopOpacity="0"/>
+      </radialGradient>
+    </defs>
+    <g>
+      <circle cx="130" cy="130" r="130" fill="url(#softHalo)" transform="translate(150,80)"/>
+      <polygon points="130,20 230,80 230,180 130,240 30,180 30,80" fill="#181A2A" transform="translate(150,80)"/>
+      <polygon points="130,32 218,84 218,176 130,228 42,176 42,84" stroke="url(#rxSiteGrad)" strokeWidth="14" fill="#0B0C10" transform="translate(150,80)"/>
+      <polyline points="42,84 130,130 130,228 42,176" stroke="url(#rxSiteGrad)" strokeWidth="12" fill="none" transform="translate(150,80)"/>
+      <polyline points="218,84 130,130 130,228 218,176" stroke="url(#rxSiteGrad)" strokeWidth="12" fill="none" transform="translate(150,80)"/>
+      <circle cx="130" cy="130" r="16" fill="#0B0C10" stroke="url(#rxSiteGrad)" strokeWidth="7" transform="translate(150,80)"/>
+      <circle cx="168" cy="108" r="14" fill="#0B0C10" stroke="url(#rxSiteGrad)" strokeWidth="7" transform="translate(150,80)"/>
+      <circle cx="98" cy="166" r="14" fill="#0B0C10" stroke="url(#rxSiteGrad)" strokeWidth="7" transform="translate(150,80)"/>
+    </g>
+    <text x="420" y="175" fontFamily="system-ui, -apple-system, 'Segoe UI', sans-serif" fontWeight="700" fontSize="85" letterSpacing="4" fill="url(#rxSiteGrad)">RECEIPTX</text>
+    <text x="410" y="245" fontFamily="system-ui, -apple-system, 'Segoe UI', sans-serif" fontSize="28" letterSpacing="4" fill="#B9BAC1">REWARDS • ANALYTICS • AI</text>
+  </svg>
+);
 import { usePrivy } from '@privy-io/react-auth';
 
 export default function ReceiptScanPage() {
@@ -20,7 +56,7 @@ export default function ReceiptScanPage() {
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
   const ALLOWED_TYPES = [
-    'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic'
+    'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'application/pdf'
   ];
 
   const handleFile = (event: any) => {
@@ -33,8 +69,9 @@ export default function ReceiptScanPage() {
       setPreview(null);
       return;
     }
+
     if (!ALLOWED_TYPES.includes(f.type)) {
-      setError('Unsupported file type. Only images (JPEG, PNG, WebP, HEIC) are allowed.');
+      setError('Unsupported file type. Only images (JPEG, PNG, WebP, HEIC) and PDFs are allowed.');
       setFile(null);
       setPreview(null);
       return;
@@ -45,94 +82,74 @@ export default function ReceiptScanPage() {
     setPreview(URL.createObjectURL(f));
   }
 
-  const submitReceipt = async () => {
-    if (!file) return
-
-    setLoading(true)
-    setError(null)
-    setResult(null)
-
-    try {
-      // Get wallet address from localStorage (set by WalletAutoGenerator)
-      const walletAddress = localStorage.getItem('receiptx_wallet');
-      
-      const formData = new FormData()
-      formData.append("file", file)
-      
-      if (walletAddress) {
-        formData.append("wallet_address", walletAddress)
-      }
-
-      const res = await fetch('/api/ocr/process', {
-        method: 'POST',
-        body: formData
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        // Handle duplicate receipt specifically
-        if (res.status === 409 && data.duplicate) {
-          throw new Error("⚠️ This receipt was already submitted. Each receipt can only be scanned once to prevent fraud.")
-        }
-        throw new Error(data.error || "Processing failed")
-      }
-
-      setResult(data)
-    } catch (err: any) {
-      setError(err.message)
-    }
-
-    setLoading(false)
-  }
-
   return (
-    <main className="min-h-screen bg-[#0B0C10] text-white p-6">
-      <h1 className="text-3xl font-bold text-cyan-400 mb-4">Scan Your Receipt</h1>
-
-      <p className="text-gray-400 mb-6">
-        Take a photo or upload an image of your receipt to earn RWT tokens!<br />
-        <span className="text-xs text-cyan-300">Max file size: 10MB. Supported formats: JPEG, PNG, WebP, HEIC.</span>
+    <main className="min-h-screen bg-gradient-to-br from-[#0B0C10] via-[#1F2235] to-[#232946] text-white p-6 flex flex-col items-center justify-center">
+      <ReceiptXLogo />
+      <h1 className="text-3xl font-extrabold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent mb-4 text-center drop-shadow">Scan Your Receipt</h1>
+      <p className="text-base text-slate-200 mb-6 text-center max-w-lg">
+        <span className="block text-lg font-medium mb-2">Snap a photo or upload your receipt to earn <span className="text-cyan-300 font-bold">RWT</span> tokens!</span>
+        <span className="text-xs text-cyan-200 block mb-1">Max file size: 10MB. Supported: JPEG, PNG, WebP, HEIC.</span>
+        <span className="text-xs text-yellow-200 block">On Telegram: Tap the button and select <b>Camera</b> for the fastest experience.</span>
       </p>
 
-      {/* File Upload Options */}
-      <div className="flex flex-col gap-4 mb-6">
-        {/* Mobile Camera Button */}
-        <label className="cursor-pointer">
-          <div className="bg-gradient-to-r from-cyan-500 to-blue-600 p-6 rounded-xl 
-                          text-center hover:opacity-90 transition-all shadow-lg">
-            <div className="text-5xl mb-2">📸</div>
-            <p className="text-xl font-bold">Take Photo</p>
-            <p className="text-sm text-cyan-100 mt-1">Use your camera</p>
-          </div>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,application/pdf"
-            capture="environment"
-            onChange={handleFile}
-            className="hidden"
-          />
-        </label>
+      {!preview && (
+        <button
+          onClick={() => inputRef.current?.click()}
+          className="w-full max-w-xs px-8 py-6 rounded-2xl bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 hover:from-cyan-300 hover:to-purple-600 text-white text-2xl font-bold shadow-2xl flex flex-col items-center gap-2 mb-6 transition border-2 border-cyan-300/40"
+          style={{ minHeight: 80 }}
+        >
+          <span className="text-4xl drop-shadow">📷</span>
+          <span>Take Photo or Upload</span>
+        </button>
+      )}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFile}
+        className="hidden"
+      />
 
-        {/* File Upload Button */}
-        <label className="cursor-pointer">
-          <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-6 rounded-xl 
-                          text-center hover:opacity-90 transition-all shadow-lg">
-            <div className="text-5xl mb-2">🖼️</div>
-            <p className="text-xl font-bold">Upload Image</p>
-            <p className="text-sm text-purple-100 mt-1">Choose from gallery</p>
-          </div>
-          <input
-            type="file"
-            accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,application/pdf"
-            onChange={handleFile}
-            className="hidden"
+      {preview && (
+        <div className="w-full max-w-xs flex flex-col items-center mb-6">
+          <img
+            src={preview}
+            alt="Receipt preview"
+            className="rounded-xl border-4 border-cyan-400 max-h-96 w-full object-contain shadow-2xl bg-[#181A2A]"
           />
-        </label>
+          <button
+            onClick={() => {
+              setPreview(null);
+              setFile(null);
+            }}
+            className="mt-3 px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-400 hover:to-pink-600 text-white rounded-lg font-semibold text-sm shadow border border-red-300/40"
+          >
+            Retake / Choose Another
+          </button>
+        </div>
+      )}
 
-        {preview && (
-          <div className="mt-4">
+      <button
+        onClick={submitReceipt}
+        disabled={loading || !file}
+        className="w-full max-w-xs px-6 py-4 rounded-xl bg-gradient-to-r from-green-400 via-emerald-500 to-teal-500 hover:from-green-300 hover:to-teal-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-xl font-bold shadow-xl mb-2 border-2 border-green-300/40"
+      >
+        {loading ? 'Processing...' : 'Submit Receipt'}
+      </button>
+
+      {error && (
+        <div className="mt-4 bg-gradient-to-r from-red-900/80 to-pink-900/60 border border-red-500 text-red-100 p-4 rounded-lg max-w-xs text-center shadow">
+          <p>{error}</p>
+        </div>
+      )}
+
+      {result && (
+        <div className="mt-4 bg-gradient-to-r from-green-900/80 to-teal-900/60 border border-green-500 text-green-100 p-4 rounded-lg max-w-xs text-center shadow">
+          <p>✅ Receipt processed! RWT earned: <b>{result.rwt_earned}</b></p>
+        </div>
+      )}
+    </main>
+  );
             <img
               src={preview}
               alt="Receipt preview"
