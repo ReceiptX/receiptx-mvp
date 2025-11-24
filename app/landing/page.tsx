@@ -1,5 +1,283 @@
 "use client";
 
+import { useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+
+const NFT_TIERS = [
+  {
+    name: "Genesis Pass",
+    price: 100,
+    supply: 1000,
+    multiplier: 1.5,
+    rarity: "Legendary",
+    color: "from-[#FF003D] via-[#9D00FF] to-[#5A00FF]",
+    badge: "🌟",
+    background: "bg-gradient-to-br from-[#1a0022] via-[#2d0036] to-[#050509]",
+    perks: [
+      "Lifetime 1.5x RWT & AIA multiplier",
+      "Max multipliers on all rewards",
+      "Governance rights",
+      "Future airdrops",
+      "Whitelist forever"
+    ],
+    note: "Lifetime multiplier applies to all receipts.",
+    metadata: {
+      tier: 3,
+      label: "GENESIS",
+      art: "genesis.svg",
+      commission: 0.08 // 8% resale commission
+    }
+  },
+  {
+    name: "Power User NFT",
+    price: 25,
+    supply: 2000,
+    multiplier: 2.0,
+    rarity: "Epic",
+    color: "from-[#FF006E] via-[#9D00FF] to-[#5A00FF]",
+    badge: "⚡",
+    background: "bg-gradient-to-br from-[#2a0036] via-[#3d0050] to-[#050509]",
+    perks: [
+      "2x multiplier on first 2,000 receipts uploaded",
+      "Priority airdrops",
+      "Special Discord/Telegram role"
+    ],
+    note: "2x multiplier applies only to your first 2,000 receipts.",
+    metadata: {
+      tier: 2,
+      label: "POWER USER",
+      art: "poweruser.svg",
+      commission: 0.07 // 7% resale commission
+    }
+  },
+  {
+    name: "Early Bird NFT",
+    price: 5,
+    supply: 4000,
+    multiplier: 3.0,
+    rarity: "Rare",
+    color: "from-[#FF006E] via-[#FF003D] to-[#9CA3AF]",
+    badge: "🐦",
+    background: "bg-gradient-to-br from-[#2a0022] via-[#3d0030] to-[#050509]",
+    perks: [
+      "3x multiplier on first 750 receipts uploaded",
+      "Early supporter badge"
+    ],
+    note: "3x multiplier applies only to your first 750 receipts.",
+    metadata: {
+      tier: 1,
+      label: "EARLY BIRD",
+      art: "earlybird.svg",
+      commission: 0.05 // 5% resale commission
+    }
+  },
+];
+
+export default function LandingPage() {
+  const [email, setEmail] = useState("");
+  const [waitlistSuccess, setWaitlistSuccess] = useState(false);
+  const [selectedTier, setSelectedTier] = useState(null);
+  const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+  const [walletAddress, setWalletAddress] = useState("");
+  const [loading, setLoading] = useState(false);
+
+
+  // Telegram Stars payment integration
+  async function handleTelegramStarsPurchase(tier) {
+    setSelectedTier(tier);
+    setLoading(true);
+    try {
+      // Call backend to get invoice slug/payload
+      const res = await fetch('/api/telegram/invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.invoiceSlug) {
+        alert('Failed to create Telegram invoice.');
+        setLoading(false);
+        return;
+      }
+      if (window?.Telegram?.WebApp?.openInvoice) {
+        window.Telegram.WebApp.openInvoice(data.invoiceSlug, (status) => {
+          if (status === 'paid') {
+            // Simulate wallet generation after payment
+            const mockWallet = "0x" + Math.random().toString(16).slice(2, 42);
+            setWalletAddress(mockWallet);
+            setPurchaseSuccess(true);
+          } else {
+            alert('Payment was not completed.');
+          }
+          setLoading(false);
+        });
+      } else {
+        alert('Telegram Stars payment is only available in Telegram WebApp.');
+        setLoading(false);
+      }
+    } catch (err) {
+      alert('Error initiating Telegram Stars payment.');
+      setLoading(false);
+    }
+  }
+
+  async function handleWaitlist(e) {
+    e.preventDefault();
+    if (!email) return;
+    const { error } = await supabase.from('waitlist').insert([{ email }]);
+    if (!error) {
+      setWaitlistSuccess(true);
+      setEmail("");
+    } else {
+      alert("There was an error joining the waitlist. Please try again.");
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-[#0B0C10] via-[#1F2235] to-[#232946] text-white flex flex-col items-center px-4 py-10">
+      {/* Hero Section */}
+      <section className="max-w-3xl w-full text-center mb-12">
+        <div className="flex justify-center mb-6">
+          {/* Logo SVG */}
+          <svg width="120" height="50" viewBox="0 0 900 380" className="drop-shadow-xl" style={{maxWidth:'180px'}}>
+            <defs>
+              <linearGradient id="rxSiteGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#22d3ee"/>
+                <stop offset="50%" stopColor="#6366f1"/>
+                <stop offset="100%" stopColor="#a21caf"/>
+              </linearGradient>
+            </defs>
+            <polygon points="130,32 218,84 218,176 130,228 42,176 42,84" stroke="url(#rxSiteGrad)" strokeWidth="14" fill="#0B0C10" transform="translate(10,10)"/>
+            <text x="180" y="90" fontFamily="system-ui, -apple-system, 'Segoe UI', sans-serif" fontWeight="700" fontSize="60" letterSpacing="4" fill="url(#rxSiteGrad)">RECEIPTX</text>
+          </svg>
+        </div>
+        <h1 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent mb-4 drop-shadow">Unlock the Future of Receipts</h1>
+        <p className="text-lg text-slate-200 mb-6">Earn rewards, analytics, and exclusive multipliers with ReceiptX. Join the waitlist or become a founding member by purchasing a Lifetime Multiplier NFT.</p>
+      </section>
+
+      {/* NFT Sale Section */}
+      <section className="w-full max-w-4xl mb-14">
+        <h2 className="text-2xl font-bold mb-6 text-center text-cyan-300">Founders NFT Sale</h2>
+        <div className="grid md:grid-cols-3 gap-8">
+          {NFT_TIERS.map((tier, i) => (
+            <div key={tier.name} className={`rounded-2xl border-2 shadow-xl p-6 flex flex-col items-center ${tier.background} border-cyan-700/30`}>
+              <div className={`text-4xl mb-2 bg-gradient-to-r ${tier.color} bg-clip-text text-transparent`}>{tier.badge}</div>
+              <div className="text-xl font-semibold mb-1 flex items-center gap-2">
+                {tier.name}
+                <span className="text-xs px-2 py-1 rounded bg-slate-800 border border-slate-600 ml-2 uppercase tracking-widest">{tier.rarity}</span>
+              </div>
+              <div className="text-lg font-bold text-cyan-200 mb-1">{tier.metadata.label}</div>
+              <div className="text-2xl font-bold text-cyan-300 mb-2">${tier.price}</div>
+              <div className="text-sm text-slate-400 mb-2">Max {tier.supply} NFTs</div>
+              <ul className="text-left text-sm text-slate-200 mb-4 list-disc list-inside">
+                {tier.perks.map((perk) => (
+                  <li key={perk}>{perk}</li>
+                ))}
+              </ul>
+              <div className="text-xs text-pink-400 mb-2 font-semibold">
+                {`Resale commission: ${(tier.metadata.commission * 100).toFixed(0)}% will be collected on every secondary sale`}
+              </div>
+              <div className="text-xs text-slate-400 mb-2 italic">{tier.note}</div>
+              <button
+                className="mt-auto px-6 py-2 rounded-lg bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold shadow hover:opacity-90 disabled:opacity-40"
+                disabled={loading || purchaseSuccess}
+                onClick={() => handleTelegramStarsPurchase(tier)}
+              >
+                {loading && selectedTier === tier ? 'Processing...' : purchaseSuccess && selectedTier === tier ? 'Purchased!' : 'Buy with Telegram Stars'}
+              </button>
+            </div>
+          ))}
+        </div>
+        {/* Payment Modal removed: replaced by Telegram Stars payment */}
+        {purchaseSuccess && (
+          <div className="mt-8 bg-green-900/60 border border-green-500 text-green-100 p-4 rounded-lg text-center max-w-xl mx-auto">
+            <h3 className="text-xl font-bold mb-2">Congratulations!</h3>
+            <p>You’ve secured a {selectedTier.name} and your Supra wallet has been generated:</p>
+            <div className="mt-2 text-cyan-300 font-mono text-lg">{walletAddress}</div>
+            <p className="mt-2 text-sm text-slate-300">Your NFT and wallet will be securely held until the MVP launch.</p>
+          </div>
+        )}
+      </section>
+
+      {/* Waitlist Section */}
+      <section className="w-full max-w-lg mb-14">
+        <h2 className="text-xl font-bold mb-4 text-cyan-300 text-center">Join the Waitlist</h2>
+        <form onSubmit={handleWaitlist} className="flex flex-col md:flex-row gap-4 items-center justify-center">
+          <input
+            type="email"
+            required
+            placeholder="Enter your email"
+            className="flex-1 px-4 py-3 rounded-lg bg-[#232946] border border-cyan-700/30 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            disabled={waitlistSuccess}
+          />
+          <button
+            type="submit"
+            className="px-6 py-3 rounded-lg bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold shadow hover:opacity-90 disabled:opacity-40"
+            disabled={waitlistSuccess}
+          >
+            {waitlistSuccess ? 'Joined!' : 'Join Waitlist'}
+          </button>
+        </form>
+        {waitlistSuccess && (
+          <div className="mt-4 text-green-300 text-center">Thank you! You’re on the list for early access and updates.</div>
+        )}
+      </section>
+
+      {/* Wallet Tech Showcase */}
+      <section className="w-full max-w-3xl mb-14 text-center">
+        <h2 className="text-xl font-bold mb-4 text-cyan-300">Seamless Supra Wallet Generation</h2>
+        <p className="text-slate-200 mb-4">Our proprietary wallet engine creates a secure Supra wallet for every NFT purchaser—no browser extension or seed phrase required. Your wallet and NFT are safely held until launch, then you’ll get full access and self-custody options.</p>
+        <div className="flex flex-col md:flex-row gap-6 justify-center items-center">
+          <div className="bg-[#181A2A] rounded-xl p-6 border border-cyan-700/20 shadow w-full md:w-1/2">
+            <div className="text-cyan-300 font-mono text-lg mb-2">Supra Wallet Address Example</div>
+            <div className="text-white font-mono text-xl break-all">0xA1b2C3d4E5f6A7b8C9d0E1f2A3b4C5d6E7f8A9b0</div>
+          </div>
+          <div className="bg-[#181A2A] rounded-xl p-6 border border-cyan-700/20 shadow w-full md:w-1/2">
+            <div className="text-cyan-300 font-mono text-lg mb-2">How It Works</div>
+            <ul className="text-left text-slate-200 text-sm list-disc list-inside">
+              <li>Buy an NFT → Wallet is generated instantly</li>
+              <li>Wallet and NFT are securely held until MVP launch</li>
+              <li>At launch, you get full access and can transfer to self-custody</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="w-full max-w-3xl mb-14">
+        <h2 className="text-xl font-bold mb-4 text-cyan-300 text-center">FAQ</h2>
+        <div className="space-y-4 text-slate-200">
+          <details className="bg-[#181A2A] rounded-lg p-4 border border-cyan-700/20">
+            <summary className="font-semibold text-cyan-300 cursor-pointer">What is ReceiptX?</summary>
+            <p className="mt-2">ReceiptX is a next-gen rewards and analytics platform powered by NFTs and Supra blockchain. Upload receipts, earn tokens, and unlock exclusive multipliers.</p>
+          </details>
+          <details className="bg-[#181A2A] rounded-lg p-4 border border-cyan-700/20">
+            <summary className="font-semibold text-cyan-300 cursor-pointer">How does the NFT multiplier work?</summary>
+            <p className="mt-2">Each NFT tier grants a lifetime multiplier on all RWT and AIA rewards. The higher the tier, the bigger your boost—forever.</p>
+          </details>
+          <details className="bg-[#181A2A] rounded-lg p-4 border border-cyan-700/20">
+            <summary className="font-semibold text-cyan-300 cursor-pointer">How is my wallet generated and secured?</summary>
+            <p className="mt-2">We use enterprise-grade, non-custodial wallet generation. Your wallet is created and stored securely until launch, then you’ll receive full access and can transfer to your own wallet.</p>
+          </details>
+          <details className="bg-[#181A2A] rounded-lg p-4 border border-cyan-700/20">
+            <summary className="font-semibold text-cyan-300 cursor-pointer">When will I get my NFT and wallet?</summary>
+            <p className="mt-2">NFTs and wallets are distributed at MVP launch. You’ll get an email with instructions to claim and manage your assets.</p>
+          </details>
+        </div>
+      </section>
+
+      {/* Legal/Disclaimer Section */}
+      <section className="w-full max-w-3xl mb-10 text-xs text-slate-400 text-center">
+        <p className="mb-2">ReceiptX is a rewards and analytics platform. NFTs are digital collectibles and do not represent equity or securities. All purchases are final. Please read our <a href="/privacy" className="underline text-cyan-300">Privacy Policy</a> and <a href="/terms" className="underline text-cyan-300">Terms of Service</a> before participating.</p>
+        <p>Powered by Supra blockchain. Not affiliated with any POS brand unless stated.</p>
+      </section>
+    </main>
+  );
+}
+"use client";
+
 import { motion } from "framer-motion";
 import Link from "next/link";
 
@@ -381,145 +659,3 @@ export default function Landing() {
   );
 }
 
-const FEATURE_CARDS = [
-  {
-    icon: "📸",
-    title: "Receipt Scanning",
-    description: "Upload receipts via web or Telegram. AI-powered OCR extracts merchant, total, and items automatically.",
-  },
-  {
-    icon: "💰",
-    title: "RWT Rewards",
-    description: "Earn 1 RWT per $1 spent. 1.5x multiplier for Starbucks, McDonald's, and Circle K purchases.",
-  },
-  {
-    icon: "🎁",
-    title: "NFT Milestones",
-    description: "Auto-mint exclusive NFTs at 5, 15, 40, and 100 receipts. Earn special Brand Warrior NFTs for brand loyalty.",
-  },
-  {
-    icon: "💎",
-    title: "AIA Tokens",
-    description: "Convert NFTs to AIA tokens. Use for staking, governance, and unlocking premium features.",
-  },
-  {
-    icon: "🎯",
-    title: "Staking System",
-    description: "Stake AIA for tier upgrades (Bronze/Silver/Gold/Premium). Get up to 1.5x multiplier on all future receipts.",
-  },
-  {
-    icon: "🛍️",
-    title: "Rewards Marketplace",
-    description: "Redeem RWT for real rewards: gift cards, discounts, exclusive offers from top brands.",
-  },
-  {
-    icon: "🤝",
-    title: "Referral Program",
-    description: "Earn 5-10 AIA per referral. Build your network and boost your rewards.",
-  },
-  {
-    icon: "🏪",
-    title: "POS Integration",
-    description: "Connect 50+ POS systems: Shopify, Square, Clover, Toast, Stripe. 5-minute setup via webhooks.",
-  },
-  {
-    icon: "📊",
-    title: "Business Analytics",
-    description: "Businesses get anonymized insights on consumer behavior, trends, and brand performance.",
-  },
-  {
-    icon: "🔐",
-    title: "Blockchain Security",
-    description: "Self-custodial wallets, fraud prevention, and transparent on-chain reward tracking.",
-  },
-];
-
-const INVEST_CARDS = [
-  {
-    title: "1. Executive Summary",
-    points: [
-      "ReceiptX tokenizes real-world spending using AI OCR and blockchain technology.",
-      "Users earn RWT tokens (1 per $1) and redeem for real rewards from businesses.",
-      "NFT milestone system and AIA staking create engagement loops.",
-      "Businesses access anonymized analytics dashboards for consumer insights.",
-    ],
-  },
-  {
-    title: "2. Complete Product Suite",
-    points: [
-      "Receipt scanning with OCR (Web + Telegram bot integration)",
-      "POS integrations: 50+ platforms (Shopify, Square, Clover, Toast, Stripe)",
-      "Dual token system: RWT (rewards) + AIA (governance/staking)",
-      "7 NFT types with auto-minting at milestones",
-      "4-tier staking system with multiplier bonuses (1.0x to 1.5x)",
-      "Rewards marketplace with redemption codes",
-      "Business portal for creating and managing offers",
-    ],
-  },
-  {
-    title: "3. Revenue Streams",
-    points: [
-      "POS integration fees: $99-$999/mo (tiered by transaction volume)",
-      "Business subscriptions: Analytics dashboard access",
-      "Featured rewards placement: Businesses pay to feature offers",
-      "Brand multiplier partnerships: Sponsored 1.5x campaigns",
-      "Marketplace transaction fees: 5-10% on reward redemptions",
-      "API access: Enterprise data feeds for retail analytics",
-    ],
-  },
-  {
-    title: "4. Technology Stack",
-    points: [
-      "Next.js 16 + TypeScript frontend",
-      "Supabase PostgreSQL with RLS policies",
-      "Privy for Web3 authentication (seedless wallets)",
-      "OCR.space API for receipt text extraction",
-      "Solidity smart contracts (upgradeable UUPS proxy)",
-      "Supra EVM blockchain deployment",
-    ],
-  },
-  {
-    title: "5. Market Traction",
-    points: [
-      "MVP fully functional with complete user flow",
-      "Active brand partnerships: Starbucks, McDonald's, Circle K",
-      "Sample rewards marketplace with 5+ live offers",
-      "NFT system with 7 collectible types",
-      "Staking mechanism with proven engagement metrics",
-      "Ready for pilot launch and user onboarding",
-    ],
-  },
-  {
-    title: "6. Roadmap & Milestones",
-    points: [
-      "Q1 2025: Deploy database migration, launch pilot with 100 users",
-      "Q2 2025: Scale to 10 business partnerships, 1K active users",
-      "Q3 2025: Mobile app launch (iOS/Android), expand to 10K users",
-      "Q4 2025: International expansion, 50+ brand partnerships",
-      "2026: Enterprise analytics platform, white-label solutions",
-    ],
-  },
-  {
-    title: "7. Competitive Advantages",
-    points: [
-      "50+ POS integrations: Fastest market deployment with webhook adapters",
-      "Frictionless onboarding: No seed phrases, email/Telegram login",
-      "Gamified engagement: NFTs and staking create addiction loops",
-      "Instant gratification: Auto-rewards on every receipt",
-      "Zero PII storage: Privacy-first architecture",
-      "Brand-agnostic: Works with any receipt, any merchant",
-      "Real utility: RWT redeemable for actual products/services",
-    ],
-  },
-  {
-    title: "8. Use of Funds",
-    points: [
-      "Product development: Mobile apps, advanced OCR, SKU matching",
-      "Business development: Sales team for brand partnerships",
-      "Marketing: User acquisition campaigns, influencer partnerships",
-      "Infrastructure: Cloud hosting, database scaling, blockchain fees",
-      "Legal & compliance: Terms of service, privacy policy, security audits",
-      "Team expansion: 3-5 full-time hires (engineering, BD, marketing)",
-    ],
-  },
-];

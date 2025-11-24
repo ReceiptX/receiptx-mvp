@@ -78,10 +78,14 @@ export default function ReceiptScanPage() {
     }
 
     setError(null);
+    // ...existing code...
+  }
+  // ...existing code...
     setFile(f);
     setPreview(URL.createObjectURL(f));
   }
 
+  // Only one return statement at the end:
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0B0C10] via-[#1F2235] to-[#232946] text-white p-6 flex flex-col items-center justify-center">
       <ReceiptXLogo />
@@ -150,23 +154,6 @@ export default function ReceiptScanPage() {
       )}
     </main>
   );
-            <img
-              src={preview}
-              alt="Receipt preview"
-              className="rounded-lg border-2 border-cyan-500 max-h-96 w-full object-contain shadow-xl"
-            />
-            <button
-              onClick={() => {
-                setPreview(null);
-                setFile(null);
-              }}
-              className="mt-2 text-red-400 hover:text-red-300 text-sm"
-            >
-              ✕ Remove image
-            </button>
-          </div>
-        )}
-      </div>
 
       <button
         onClick={submitReceipt}

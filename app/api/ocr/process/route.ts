@@ -28,11 +28,19 @@ let hasReceivedReferralBonus: any = null;
 function loadBlockchainIntegration() {
   if (process.env.ENABLE_BLOCKCHAIN === 'true' && process.env.VERCEL !== '1') {
     try {
-      const fs = eval('require')("fs");
-      const path = eval('require')("path");
-      const tokenPath = path.resolve(__dirname, '../../lib/blockchain/receiptxToken.js');
-      if (fs.existsSync(tokenPath)) {
-        const receiptxToken = eval('require')(tokenPath);
+      // Use a path relative to this file for build compatibility
+      // Use a relative path import for Next.js build compatibility
+      let receiptxToken = null;
+      try {
+        receiptxToken = require('../../../../lib/blockchain/receiptxToken.js');
+      } catch (e) {
+        // Not found, skip blockchain integration
+      }
+      if (receiptxToken) {
+        mintRWT = receiptxToken.mintRWT;
+        isContractConfigured = receiptxToken.isContractConfigured;
+        processReferralBonus = receiptxToken.processReferralBonus;
+        hasReceivedReferralBonus = receiptxToken.hasReceivedReferralBonus;
         mintRWT = receiptxToken.mintRWT;
         isContractConfigured = receiptxToken.isContractConfigured;
         processReferralBonus = receiptxToken.processReferralBonus;
@@ -131,7 +139,7 @@ export async function POST(req: NextRequest) {
     if (file.type === 'application/pdf') {
       // PDF: extract text using pdf-parse (must be installed)
       try {
-        const pdfParse = require('pdf-parse');
+        const pdfParse = await import('pdf-parse').then(mod => mod.default || mod);
         const pdfData = await pdfParse(buffer);
         rawText = pdfData.text || "";
         ocrResult.text = rawText;
