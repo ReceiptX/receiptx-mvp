@@ -37,22 +37,35 @@ const ReceiptXLogo = () => (
     <text x="410" y="245" fontFamily="system-ui, -apple-system, 'Segoe UI', sans-serif" fontSize="28" letterSpacing="4" fill="#B9BAC1">REWARDS • ANALYTICS • AI</text>
   </svg>
 );
+
 import { usePrivy } from '@privy-io/react-auth';
+import dynamic from 'next/dynamic';
+const CameraCapture = dynamic(() => import('./CameraCapture'), { ssr: false });
+
 
 export default function ReceiptScanPage() {
-  const [preview, setPreview] = useState<string | null>(null)
-  const [file, setFile] = useState<File | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<any>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [preview, setPreview] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const { authenticated, ready } = usePrivy();
 
+  // Accepts base64 image from CameraCapture and sets preview
+  const handleCameraPhoto = (dataUrl: string) => {
+    setPreview(dataUrl);
+    setFile(null); // Camera photo is not a File, but we treat preview as the source
+    setError(null);
+  };
+
+
+  // Only auto-open file picker if not using camera
   useEffect(() => {
-    if (ready && authenticated && inputRef.current && !file) {
+    if (ready && authenticated && inputRef.current && !file && !preview) {
       inputRef.current.click();
     }
-  }, [ready, authenticated, file]);
+  }, [ready, authenticated, file, preview]);
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
   const ALLOWED_TYPES = [
@@ -78,14 +91,12 @@ export default function ReceiptScanPage() {
     }
 
     setError(null);
-    // ...existing code...
-  }
-  // ...existing code...
     setFile(f);
     setPreview(URL.createObjectURL(f));
-  }
+  };
 
   // Only one return statement at the end:
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0B0C10] via-[#1F2235] to-[#232946] text-white p-6 flex flex-col items-center justify-center">
       <ReceiptXLogo />
@@ -96,24 +107,35 @@ export default function ReceiptScanPage() {
         <span className="text-xs text-yellow-200 block">On Telegram: Tap the button and select <b>Camera</b> for the fastest experience.</span>
       </p>
 
+      {/* Camera/photo upload UI */}
       {!preview && (
-        <button
-          onClick={() => inputRef.current?.click()}
-          className="w-full max-w-xs px-8 py-6 rounded-2xl bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 hover:from-cyan-300 hover:to-purple-600 text-white text-2xl font-bold shadow-2xl flex flex-col items-center gap-2 mb-6 transition border-2 border-cyan-300/40"
-          style={{ minHeight: 80 }}
-        >
-          <span className="text-4xl drop-shadow">📷</span>
-          <span>Take Photo or Upload</span>
-        </button>
+        <div className="w-full max-w-xs mb-6">
+          <CameraCapture onPhotoUpload={handleCameraPhoto} />
+        </div>
       )}
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFile}
-        className="hidden"
-      />
 
+      {/* Fallback file upload for non-camera users */}
+      {!preview && (
+        <>
+          <button
+            onClick={() => inputRef.current?.click()}
+            className="w-full max-w-xs px-8 py-6 rounded-2xl bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 hover:from-cyan-300 hover:to-purple-600 text-white text-2xl font-bold shadow-2xl flex flex-col items-center gap-2 mb-6 transition border-2 border-cyan-300/40"
+            style={{ minHeight: 80 }}
+          >
+            <span className="text-4xl drop-shadow">📁</span>
+            <span>Upload from Device</span>
+          </button>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFile}
+            className="hidden"
+          />
+        </>
+      )}
+
+      {/* Preview and retake/clear option */}
       {preview && (
         <div className="w-full max-w-xs flex flex-col items-center mb-6">
           <img
@@ -154,6 +176,7 @@ export default function ReceiptScanPage() {
       )}
     </main>
   );
+}
 
       <button
         onClick={submitReceipt}
@@ -228,6 +251,6 @@ export default function ReceiptScanPage() {
           </pre>
         </div>
       )}
+
     </main>
-  )
-}
+  );

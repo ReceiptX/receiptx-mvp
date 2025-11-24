@@ -1,0 +1,98 @@
+<svg width="900" height="380" viewBox="0 0 900 380" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Primary brand gradient -->
+    <linearGradient id="rxPrimary" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="50%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#a21caf"/>
+    </linearGradient>
+
+    <!-- Coin gradient -->
+    <linearGradient id="rxCoin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF003D"/>
+      <stop offset="30%" stop-color="#FF006E"/>
+      <stop offset="65%" stop-color="#9D00FF"/>
+      <stop offset="100%" stop-color="#5A00FF"/>
+    </linearGradient>
+
+    <!-- Soft glow -->
+    <radialGradient id="rxGlow" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#050509" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="#050509"/>
+
+  <!-- Chibi Robot (Number 2) -->
+  <g transform="translate(80,35)">
+    <!-- Glow -->
+    <circle cx="176" cy="145" r="145" fill="url(#rxGlow)"/>
+
+    <!-- Extra big chibi head -->
+    <rect x="96" y="40" width="160" height="120" rx="40"
+          fill="#0B0C10" stroke="url(#rxPrimary)" stroke-width="8"/>
+
+    <!-- Cute LED face panel -->
+    <rect x="116" y="75" width="120" height="60" rx="30"
+          fill="#050509" stroke="url(#rxPrimary)" stroke-width="5"/>
+
+    <!-- Eyes -->
+    <circle cx="146" cy="105" r="12" fill="url(#rxPrimary)"/>
+    <circle cx="206" cy="105" r="12" fill="url(#rxPrimary)"/>
+
+    <!-- Little smile -->
+    <path d="M150 120 Q176 135 202 120"
+          stroke="#22d3ee" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+    <!-- Tiny rounded body -->
+    <rect x="136" y="170" width="80" height="60" rx="26"
+          fill="#0B0C10" stroke="url(#rxPrimary)" stroke-width="7"/>
+
+    <!-- Left arm with receipt -->
+    <rect x="110" y="175" width="24" height="55" rx="14"
+          fill="#0B0C10" stroke="url(#rxPrimary)" stroke-width="5"/>
+    <rect x="96" y="210" width="24" height="60" rx="8"
+          fill="#050509" stroke="url(#rxPrimary)" stroke-width="4"/>
+
+    <!-- Right arm dropping coins -->
+    <rect x="218" y="175" width="24" height="55" rx="14"
+          fill="#0B0C10" stroke="url(#rxPrimary)" stroke-width="5"/>
+
+    <!-- Little chibi legs -->
+    <rect x="140" y="225" width="26" height="60" rx="14"
+          fill="#0B0C10" stroke="url(#rxPrimary)" stroke-width="5"/>
+    <rect x="186" y="225" width="26" height="60" rx="14"
+          fill="#0B0C10" stroke="url(#rxPrimary)" stroke-width="5"/>
+
+    <!-- Coins -->
+    <circle cx="238" cy="230" r="14" fill="url(#rxCoin)"/>
+    <circle cx="226" cy="260" r="11" fill="url(#rxCoin)"/>
+    <circle cx="242" cy="288" r="9" fill="url(#rxCoin)"/>
+  </g>
+
+  <!-- Text block (centered relative to right side) -->
+  <g>
+    <!-- Wordmark -->
+    <text x="595" y="175"
+          text-anchor="middle"
+          font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
+          font-weight="800"
+          font-size="80"
+          letter-spacing="3"
+          fill="url(#rxPrimary)">
+      RECEIPTX
+    </text>
+
+    <!-- Tagline -->
+    <text x="595" y="235"
+          text-anchor="middle"
+          font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
+          font-size="24"
+          letter-spacing="3"
+          fill="#d3d7f0">
+      REWARDS – ANALYTICS – AI
+    </text>
+  </g>
+</svg>
