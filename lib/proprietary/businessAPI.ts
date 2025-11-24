@@ -29,7 +29,7 @@ export class ReceiptXBusinessAPI {
   }
 
   async initialize(config: any) {
-    console.log("Initializing ReceiptX business integration for:", config.platform);
+    // console.log("Initializing ReceiptX business integration for:", config.platform); // Remove in production
     
     if (!this.adapters.has(config.platform)) {
       throw new Error(`Unsupported platform: ${config.platform}`);
@@ -62,7 +62,7 @@ export class ReceiptXBusinessAPI {
     // Store in database
     await this.storeReceipt(standardReceipt);
 
-    console.log(`✅ Processed ${platform} receipt:`, standardReceipt.order_id);
+    // console.log(`✅ Processed ${platform} receipt:`, standardReceipt.order_id); // Remove in production
     
     return standardReceipt;
   }
@@ -104,7 +104,7 @@ export class ReceiptXBusinessAPI {
       });
 
     if (error) {
-      console.error("Error storing receipt:", error);
+      // console.error("Error storing receipt:", error); // Remove in production
       throw error;
     }
 

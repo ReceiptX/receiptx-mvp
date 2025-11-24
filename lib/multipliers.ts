@@ -169,7 +169,7 @@ export function detectBrandFromText(text: string): BrandKey | null {
   
   for (const candidate of brandCandidates) {
     if (normalizedText.includes(candidate.alias)) {
-      console.log(`🏷️ Brand detected via name: ${candidate.key} (matched "${candidate.alias}")`);
+      // console.log(`🏷️ Brand detected via name: ${candidate.key} (matched "${candidate.alias}")`); // Remove in production
       return candidate.key;
     }
   }
@@ -192,7 +192,7 @@ export function detectBrandFromText(text: string): BrandKey | null {
     
     if (matchCount > 0) {
       menuItemScores[key as BrandKey] = matchCount;
-      console.log(`🍔 Menu items detected for ${key}: ${matchedItems.join(", ")} (${matchCount} matches)`);
+      // console.log(`🍔 Menu items detected for ${key}: ${matchedItems.join(", ")} (${matchCount} matches)`); // Remove in production
     }
   }
   
@@ -212,7 +212,7 @@ export function detectBrandFromText(text: string): BrandKey | null {
     
     if (matchCount > 0) {
       patternScores[key as BrandKey] = matchCount;
-      console.log(`📋 Receipt patterns detected for ${key}: ${matchCount} matches`);
+      // console.log(`📋 Receipt patterns detected for ${key}: ${matchCount} matches`); // Remove in production
     }
   }
   
@@ -235,11 +235,11 @@ export function detectBrandFromText(text: string): BrandKey | null {
   
   if (sortedBrands.length > 0 && sortedBrands[0][1] >= 2) {
     const detectedBrand = sortedBrands[0][0] as BrandKey;
-    console.log(`🎯 Brand detected via items/patterns: ${detectedBrand} (confidence: ${sortedBrands[0][1]})`);
+    // console.log(`🎯 Brand detected via items/patterns: ${detectedBrand} (confidence: ${sortedBrands[0][1]})`); // Remove in production
     return detectedBrand;
   }
   
-  console.log("❓ No brand detected in receipt");
+  // console.log("❓ No brand detected in receipt"); // Remove in production
   return null;
 }
 

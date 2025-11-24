@@ -52,14 +52,14 @@ export async function processImageOCR(buffer: Buffer): Promise<OCRResult> {
 
     const text = data.ParsedResults?.[0]?.ParsedText || "";
     
-    console.log(`✅ OCR.space extracted text (${text.length} chars)`);
+    // console.log(`✅ OCR.space extracted text (${text.length} chars)`); // Remove in production
     
     return {
       text: text.trim(),
       confidence: 0.9,
     };
   } catch (error: any) {
-    console.error("❌ OCR Error:", error.message);
+    // console.error("❌ OCR Error:", error.message); // Remove in production
     throw new Error(`Failed to process OCR: ${error.message}`);
   }
 }

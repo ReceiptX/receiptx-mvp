@@ -12,6 +12,7 @@ export default function CookieConsent() {
   });
 
   useEffect(() => {
+    // Only store non-sensitive consent data in localStorage (best practice)
     const consent = localStorage.getItem("cookieConsent");
     if (!consent) {
       setShowBanner(true);
@@ -25,6 +26,8 @@ export default function CookieConsent() {
       marketing: true,
       timestamp: new Date().toISOString(),
     };
+    // Only store non-sensitive consent data in localStorage (best practice)
+    // Only store non-sensitive consent data in localStorage (best practice)
     localStorage.setItem("cookieConsent", JSON.stringify(consent));
     setShowBanner(false);
   };
@@ -36,6 +39,7 @@ export default function CookieConsent() {
       marketing: false,
       timestamp: new Date().toISOString(),
     };
+    // Only store non-sensitive consent data in localStorage (best practice)
     localStorage.setItem("cookieConsent", JSON.stringify(consent));
     setShowBanner(false);
   };
@@ -45,6 +49,7 @@ export default function CookieConsent() {
       ...preferences,
       timestamp: new Date().toISOString(),
     };
+    // Only store non-sensitive consent data in localStorage (best practice)
     localStorage.setItem("cookieConsent", JSON.stringify(consent));
     setShowBanner(false);
   };

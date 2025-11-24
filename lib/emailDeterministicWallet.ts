@@ -1,3 +1,32 @@
+// --- Security Helper: AES-GCM Encryption for Private Keys ---
+async function encryptPrivateKey(privateKey: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(privateKey);
+  const secretKey = process.env.WEB2WEB3_SECRET_KEY || 'default-secret-key';
+  const keyData = encoder.encode(secretKey);
+
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    await crypto.subtle.digest('SHA-256', keyData),
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt']
+  );
+
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    cryptoKey,
+    data
+  );
+
+  // Combine IV + encrypted data
+  const combined = new Uint8Array(iv.length + encrypted.byteLength);
+  combined.set(iv, 0);
+  combined.set(new Uint8Array(encrypted), iv.length);
+
+  return Buffer.from(combined).toString('base64');
+}
 /// Email-Based Deterministic Wallet Generation
 /// Implements Patent Application #1: "Method and System for Deterministic 
 /// Cryptocurrency Wallet Creation from Email Addresses"
@@ -173,16 +202,17 @@ export class EmailDeterministicWallet {
       .maybeSingle();
     
     if (existing) {
-      console.log('Wallet already exists for email:', email);
+      // Wallet already exists for email (do not log sensitive info in production)
       return; // Don't create duplicate
     }
     
-    // Store wallet (private key should be encrypted in production!)
+    // Encrypt private key before storing (best practice)
+    const encryptedKey = await encryptPrivateKey(wallet.privateKey);
     await supabase.from("user_wallets").insert({
       user_email: email,
       telegram_id: telegram_id || null,
       wallet_address: wallet.address,
-      encrypted_private_key: wallet.privateKey, // TODO: Encrypt this!
+      encrypted_private_key: encryptedKey,
       blockchain_network: "supra_testnet",
       derivation_path: "email_deterministic",
       metadata: {

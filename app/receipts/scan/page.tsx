@@ -2,41 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 
-// ReceiptX SVG Logo (site-matching gradient)
-const ReceiptXLogo = () => (
-  <svg
-    width="180"
-    height="76"
-    viewBox="0 0 900 380"
-    className="mb-6 drop-shadow-xl"
-    style={{ display: 'block', margin: '0 auto', maxWidth: '320px', height: 'auto' }}
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <defs>
-      <linearGradient id="rxSiteGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#22d3ee"/>
-        <stop offset="50%" stopColor="#6366f1"/>
-        <stop offset="100%" stopColor="#a21caf"/>
-      </linearGradient>
-      <radialGradient id="softHalo" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.18"/>
-        <stop offset="100%" stopColor="#a21caf" stopOpacity="0"/>
-      </radialGradient>
-    </defs>
-    <g>
-      <circle cx="130" cy="130" r="130" fill="url(#softHalo)" transform="translate(150,80)"/>
-      <polygon points="130,20 230,80 230,180 130,240 30,180 30,80" fill="#181A2A" transform="translate(150,80)"/>
-      <polygon points="130,32 218,84 218,176 130,228 42,176 42,84" stroke="url(#rxSiteGrad)" strokeWidth="14" fill="#0B0C10" transform="translate(150,80)"/>
-      <polyline points="42,84 130,130 130,228 42,176" stroke="url(#rxSiteGrad)" strokeWidth="12" fill="none" transform="translate(150,80)"/>
-      <polyline points="218,84 130,130 130,228 218,176" stroke="url(#rxSiteGrad)" strokeWidth="12" fill="none" transform="translate(150,80)"/>
-      <circle cx="130" cy="130" r="16" fill="#0B0C10" stroke="url(#rxSiteGrad)" strokeWidth="7" transform="translate(150,80)"/>
-      <circle cx="168" cy="108" r="14" fill="#0B0C10" stroke="url(#rxSiteGrad)" strokeWidth="7" transform="translate(150,80)"/>
-      <circle cx="98" cy="166" r="14" fill="#0B0C10" stroke="url(#rxSiteGrad)" strokeWidth="7" transform="translate(150,80)"/>
-    </g>
-    <text x="420" y="175" fontFamily="system-ui, -apple-system, 'Segoe UI', sans-serif" fontWeight="700" fontSize="85" letterSpacing="4" fill="url(#rxSiteGrad)">RECEIPTX</text>
-    <text x="410" y="245" fontFamily="system-ui, -apple-system, 'Segoe UI', sans-serif" fontSize="28" letterSpacing="4" fill="#B9BAC1">REWARDS • ANALYTICS • AI</text>
-  </svg>
-);
+
 
 import { usePrivy } from '@privy-io/react-auth';
 import dynamic from 'next/dynamic';
@@ -96,10 +62,9 @@ export default function ReceiptScanPage() {
   };
 
   // Only one return statement at the end:
-
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0B0C10] via-[#1F2235] to-[#232946] text-white p-6 flex flex-col items-center justify-center">
-      <ReceiptXLogo />
+      <img src="/logo.svg" alt="ReceiptX Logo" className="w-60 max-w-xs h-auto mb-6 drop-shadow-xl object-contain" />
       <h1 className="text-3xl font-extrabold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent mb-4 text-center drop-shadow">Scan Your Receipt</h1>
       <p className="text-base text-slate-200 mb-6 text-center max-w-lg">
         <span className="block text-lg font-medium mb-2">Snap a photo or upload your receipt to earn <span className="text-cyan-300 font-bold">RWT</span> tokens!</span>
@@ -163,35 +128,10 @@ export default function ReceiptScanPage() {
         {loading ? 'Processing...' : 'Submit Receipt'}
       </button>
 
+      {/* Results */}
       {error && (
         <div className="mt-4 bg-gradient-to-r from-red-900/80 to-pink-900/60 border border-red-500 text-red-100 p-4 rounded-lg max-w-xs text-center shadow">
           <p>{error}</p>
-        </div>
-      )}
-
-      {result && (
-        <div className="mt-4 bg-gradient-to-r from-green-900/80 to-teal-900/60 border border-green-500 text-green-100 p-4 rounded-lg max-w-xs text-center shadow">
-          <p>✅ Receipt processed! RWT earned: <b>{result.rwt_earned}</b></p>
-        </div>
-      )}
-    </main>
-  );
-}
-
-      <button
-        onClick={submitReceipt}
-        disabled={loading || !file}
-        className="w-full px-6 py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 
-                   hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed
-                   text-xl font-bold shadow-lg"
-      >
-        {loading ? "Processing Receipt..." : "🚀 Submit & Earn RWT"}
-      </button>
-
-      {/* Results */}
-      {error && (
-        <div className="mt-6 bg-red-900/20 border border-red-500/50 p-4 rounded-lg">
-          <p className="text-red-400">{error}</p>
         </div>
       )}
 
@@ -206,7 +146,6 @@ export default function ReceiptScanPage() {
               {result.reward.total_rwt.toFixed(2)}
             </div>
             <p className="text-3xl font-semibold">RWT Tokens</p>
-            
             {result.reward.multiplier > 1 && (
               <div className="mt-6 bg-white/20 backdrop-blur-sm p-4 rounded-xl">
                 <p className="text-lg">
@@ -218,7 +157,6 @@ export default function ReceiptScanPage() {
               </div>
             )}
           </div>
-
           {/* Receipt Details */}
           <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
             <h3 className="text-xl font-semibold text-cyan-400 mb-4">Receipt Details</h3>
@@ -228,7 +166,6 @@ export default function ReceiptScanPage() {
               <p><strong>Multiplier:</strong> {result.data.multiplier}x</p>
               <p><strong>Receipt ID:</strong> {result.data.id.slice(0, 8)}...</p>
             </div>
-            
             {result.ocr_text && (
               <details className="mt-4">
                 <summary className="cursor-pointer text-cyan-400 hover:text-cyan-300">
@@ -251,6 +188,6 @@ export default function ReceiptScanPage() {
           </pre>
         </div>
       )}
-
     </main>
-  );
+  )
+}

@@ -32,7 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="en">
-      <body className="bg-[#0B0C10] text-white min-h-screen flex flex-col">
+      <body className="bg-gradient-to-br from-[#0B0C10] via-[#181A2A] to-[#232946] text-white min-h-screen flex flex-col">
         <Providers>
           <WalletAutoGenerator />
           <Navigation />

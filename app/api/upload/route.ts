@@ -11,6 +11,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
   }
 
+  // File type and size validation (best practice)
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  if (!allowedTypes.includes(file.type)) {
+    return NextResponse.json({ error: "Unsupported file type" }, { status: 400 });
+  }
+  if (file.size > maxSize) {
+    return NextResponse.json({ error: "File too large (max 5MB)" }, { status: 400 });
+  }
+
   // OCR extraction
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);

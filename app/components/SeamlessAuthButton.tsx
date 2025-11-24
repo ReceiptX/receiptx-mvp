@@ -40,10 +40,12 @@ export default function SeamlessAuthButton() {
    */
   useEffect(() => {
     if (authenticated && profile?.custodialWallet && !profile.custodialWallet.hasBackup) {
+      // Only store non-sensitive flags in localStorage (best practice)
       const hasSeenBackupPrompt = localStorage.getItem('receiptx_backup_prompt_shown');
       if (!hasSeenBackupPrompt) {
         setTimeout(() => {
           setShowBackupModal(true);
+          // Only store non-sensitive flags in localStorage (best practice)
           localStorage.setItem('receiptx_backup_prompt_shown', 'true');
         }, 2000); // Show after 2 seconds
       }

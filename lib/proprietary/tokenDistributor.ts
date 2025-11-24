@@ -13,7 +13,7 @@ export class TokenDistributor {
     telegram_id: string;
     receipt_id?: string;
   }) {
-    console.log("🎯 TokenDistributor: Evaluating trigger", trigger);
+        // console.log("🎯 TokenDistributor: Evaluating trigger", trigger); // Remove in production
 
     // Step 1: Calculate base RWT (1 USD = 1 RWT)
     const baseRWT = trigger.amount * 1;
@@ -22,13 +22,7 @@ export class TokenDistributor {
     const multiplier = this.getBrandMultiplier(trigger.brand);
     const totalRWT = baseRWT * multiplier;
 
-    console.log(`💎 RWT Distribution:
-      - Amount: $${trigger.amount}
-      - Base RWT: ${baseRWT}
-      - Brand: ${trigger.brand}
-      - Multiplier: ${multiplier}x
-      - Total RWT: ${totalRWT}
-    `);
+        // console.log(`💎 RWT Distribution:\n          - Amount: $${trigger.amount}\n          - Base RWT: ${baseRWT}\n          - Brand: ${trigger.brand}\n          - Multiplier: ${multiplier}x\n          - Total RWT: ${totalRWT}`); // Remove in production
 
     // Step 3: Return distribution data
     // (In production, this would trigger blockchain transaction)
