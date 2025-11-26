@@ -215,6 +215,7 @@ export default function BusinessRewardsPortal() {
                   value={formData.business_name}
                   onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
                   className="w-full px-4 py-2 bg-[#0B0C10] border border-cyan-400/30 rounded-lg text-white"
+                  placeholder="Enter business name"
                 />
               </div>
 
@@ -225,6 +226,7 @@ export default function BusinessRewardsPortal() {
                   value={formData.business_email}
                   onChange={(e) => setFormData({ ...formData, business_email: e.target.value })}
                   className="w-full px-4 py-2 bg-[#0B0C10] border border-cyan-400/30 rounded-lg text-white"
+                  placeholder="Enter business email"
                 />
               </div>
 
@@ -247,6 +249,7 @@ export default function BusinessRewardsPortal() {
                   value={formData.category_id}
                   onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
                   className="w-full px-4 py-2 bg-[#0B0C10] border border-cyan-400/30 rounded-lg text-white"
+                  title="Select category"
                 >
                   <option value="">Select category</option>
                   {categories.map((cat) => (
@@ -279,6 +282,7 @@ export default function BusinessRewardsPortal() {
                   value={formData.rwt_cost}
                   onChange={(e) => setFormData({ ...formData, rwt_cost: parseInt(e.target.value) })}
                   className="w-full px-4 py-2 bg-[#0B0C10] border border-cyan-400/30 rounded-lg text-white"
+                  placeholder="Enter RWT cost"
                 />
               </div>
 
@@ -290,6 +294,7 @@ export default function BusinessRewardsPortal() {
                   value={formData.original_value}
                   onChange={(e) => setFormData({ ...formData, original_value: parseFloat(e.target.value) })}
                   className="w-full px-4 py-2 bg-[#0B0C10] border border-cyan-400/30 rounded-lg text-white"
+                  placeholder="Enter original value"
                 />
               </div>
 
@@ -302,6 +307,7 @@ export default function BusinessRewardsPortal() {
                   value={formData.total_stock || ''}
                   onChange={(e) => setFormData({ ...formData, total_stock: e.target.value ? parseInt(e.target.value) : null })}
                   className="w-full px-4 py-2 bg-[#0B0C10] border border-cyan-400/30 rounded-lg text-white"
+                  placeholder="Enter total stock"
                 />
               </div>
 
@@ -313,6 +319,7 @@ export default function BusinessRewardsPortal() {
                   value={formData.max_per_user || ''}
                   onChange={(e) => setFormData({ ...formData, max_per_user: parseInt(e.target.value) || null })}
                   className="w-full px-4 py-2 bg-[#0B0C10] border border-cyan-400/30 rounded-lg text-white"
+                  placeholder="Enter max per user"
                 />
               </div>
 
@@ -347,6 +354,7 @@ export default function BusinessRewardsPortal() {
                   value={formData.expires_at}
                   onChange={(e) => setFormData({ ...formData, expires_at: e.target.value })}
                   className="w-full px-4 py-2 bg-[#0B0C10] border border-cyan-400/30 rounded-lg text-white"
+                  placeholder="Select expiration date"
                 />
               </div>
 
@@ -357,6 +365,7 @@ export default function BusinessRewardsPortal() {
                   value={formData.priority}
                   onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) })}
                   className="w-full px-4 py-2 bg-[#0B0C10] border border-cyan-400/30 rounded-lg text-white"
+                  placeholder="Enter priority"
                 />
               </div>
 

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+
+import Image from 'next/image';
 
 
 
@@ -64,7 +65,14 @@ export default function ReceiptScanPage() {
   // Only one return statement at the end:
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0B0C10] via-[#1F2235] to-[#232946] text-white p-6 flex flex-col items-center justify-center">
-      <img src="/logo.svg" alt="ReceiptX Logo" className="w-60 max-w-xs h-auto mb-6 drop-shadow-xl object-contain" />
+      <Image
+        src="/logo.svg"
+        alt="ReceiptX Logo"
+        width={240}
+        height={60}
+        className="w-60 max-w-xs h-auto mb-6 drop-shadow-xl object-contain"
+        priority
+      />
       <h1 className="text-3xl font-extrabold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent mb-4 text-center drop-shadow">Scan Your Receipt</h1>
       <p className="text-base text-slate-200 mb-6 text-center max-w-lg">
         <span className="block text-lg font-medium mb-2">Snap a photo or upload your receipt to earn <span className="text-cyan-300 font-bold">RWT</span> tokens!</span>
@@ -84,8 +92,7 @@ export default function ReceiptScanPage() {
         <>
           <button
             onClick={() => inputRef.current?.click()}
-            className="w-full max-w-xs px-8 py-6 rounded-2xl bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 hover:from-cyan-300 hover:to-purple-600 text-white text-2xl font-bold shadow-2xl flex flex-col items-center gap-2 mb-6 transition border-2 border-cyan-300/40"
-            style={{ minHeight: 80 }}
+            className="w-full max-w-xs px-8 py-6 rounded-2xl bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 hover:from-cyan-300 hover:to-purple-600 text-white text-2xl font-bold shadow-2xl flex flex-col items-center gap-2 mb-6 transition border-2 border-cyan-300/40 min-h-20"
           >
             <span className="text-4xl drop-shadow">📁</span>
             <span>Upload from Device</span>
@@ -96,6 +103,7 @@ export default function ReceiptScanPage() {
             accept="image/*"
             onChange={handleFile}
             className="hidden"
+            placeholder="Upload receipt image"
           />
         </>
       )}

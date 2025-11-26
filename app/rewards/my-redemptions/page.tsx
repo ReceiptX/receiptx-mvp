@@ -66,7 +66,7 @@ export default function MyRedemptions() {
 
   if (!authenticated) {
     return (
-      <main className="min-h-screen bg-[#0B0C10] text-white flex items-center justify-center">
+      <main className="min-h-screen bg-rxBg text-rxText flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-3xl font-bold mb-4">Please Log In</h1>
           <p className="text-gray-400">You need to be logged in to view your rewards</p>
@@ -76,7 +76,7 @@ export default function MyRedemptions() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0B0C10] text-white p-6">
+    <main className="min-h-screen bg-rxBg text-rxText p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -94,15 +94,15 @@ export default function MyRedemptions() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-[#1F2833] rounded-xl p-6 border border-cyan-400/20">
+          <div className="bg-rxCard rounded-xl p-6 border border-rxBlue/20">
             <div className="text-sm text-gray-400 mb-2">Total RWT Spent</div>
             <div className="text-3xl font-bold text-cyan-400">{summary.total_spent.toLocaleString()}</div>
           </div>
-          <div className="bg-[#1F2833] rounded-xl p-6 border border-green-400/20">
+          <div className="bg-rxCard rounded-xl p-6 border border-green-400/20">
             <div className="text-sm text-gray-400 mb-2">Active Coupons</div>
             <div className="text-3xl font-bold text-green-400">{summary.active_coupons}</div>
           </div>
-          <div className="bg-[#1F2833] rounded-xl p-6 border border-purple-400/20">
+          <div className="bg-rxCard rounded-xl p-6 border border-purple-400/20">
             <div className="text-sm text-gray-400 mb-2">Used Coupons</div>
             <div className="text-3xl font-bold text-purple-400">{summary.used_coupons}</div>
           </div>
@@ -115,7 +115,7 @@ export default function MyRedemptions() {
             className={`px-6 py-2 rounded-full whitespace-nowrap transition ${
               selectedStatus === null
                 ? 'bg-cyan-400 text-black font-semibold'
-                : 'bg-[#1F2833] text-gray-400 hover:bg-[#2A3441]'
+                : 'bg-rxCard text-gray-400 hover:bg-rxPurple/30'
             }`}
           >
             All ({redemptions.length})
@@ -192,7 +192,7 @@ function RedemptionCard({ redemption }: { redemption: Redemption }) {
   };
 
   return (
-    <div className="bg-[#1F2833] rounded-xl p-6 border border-cyan-400/20 hover:border-cyan-400/40 transition">
+    <div className="bg-rxCard rounded-xl p-6 border border-rxBlue/20 hover:border-rxBlue/40 transition">
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-start gap-4 flex-1">
           {/* Business Logo */}
@@ -225,7 +225,7 @@ function RedemptionCard({ redemption }: { redemption: Redemption }) {
       </div>
 
       {/* Redemption Code */}
-      <div className="bg-[#0B0C10] rounded-lg p-4 mb-4">
+      <div className="bg-rxBg rounded-lg p-4 mb-4">
         <div className="text-sm text-gray-400 mb-2">Redemption Code</div>
         <div className="flex items-center justify-between">
           <div className="text-2xl font-mono font-bold text-cyan-400 tracking-wider">

@@ -195,15 +195,15 @@ export default function StakingPage() {
   const nextTierRequired = nextTier ? nextTier.min_aia_staked - currentStaked : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+    <div className="min-h-screen bg-rxBg text-rxText p-6">
       <div className="max-w-6xl mx-auto">
         {/* Risk Disclaimer */}
         <RiskDisclaimer />
         
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">AIA Staking</h1>
-            <p className="text-gray-600">Stake AIA tokens to unlock premium tier benefits</p>
+            <h1 className="text-4xl font-bold text-rxText mb-2">AIA Staking</h1>
+            <p className="text-rxText/70">Stake AIA tokens to unlock premium tier benefits</p>
           </div>
           <button
             onClick={() => router.push("/dashboard")}
@@ -244,9 +244,8 @@ export default function StakingPage() {
                   <div className="w-full bg-white/20 rounded-full h-3 mb-2">
                     <div
                       className="bg-white rounded-full h-3 transition-all"
-                      style={{
-                        width: `${Math.min((currentStaked / nextTier.min_aia_staked) * 100, 100)}%`
-                      }}
+                      style={{ width: `${Math.min((currentStaked / nextTier.min_aia_staked) * 100, 100)}%` }}
+                      aria-label="Progress bar"
                     ></div>
                   </div>
                   <p className="text-sm text-white/90">

@@ -10,6 +10,28 @@ import {
   BASE_RWT_PER_CURRENCY_UNIT,
   type BrandKey 
 } from "@/lib/multipliers";
+
+// --- Supra Move integration (pseudo-SDK import, replace with actual SDK/API) ---
+// import { sendMoveTx } from "@/lib/supraMoveClient";
+
+async function registerUserOnChain(walletAddress: string, referralCode: string, joinedAtMs: number) {
+  // TODO: Replace with actual Supra Move SDK/client call
+  // Example:
+  // await sendMoveTx({
+  //   module: "receiptx::registry",
+  //   function: "register_user",
+  //   args: [walletAddress, referralCode ?? "", joinedAtMs],
+  // });
+  try {
+    // Simulate on-chain registration (replace with real call)
+    console.log(`[Supra Move] Registering user on-chain:`, { walletAddress, referralCode, joinedAtMs });
+    // await sendMoveTx({ ... });
+    return true;
+  } catch (err) {
+    console.error("[Supra Move] Failed to register user on-chain:", err);
+    return false;
+  }
+}
 import { ReceiptValidator } from "@/lib/receiptValidator";
 import { 
   detectLotteryTicket, 
@@ -83,7 +105,52 @@ export async function POST(req: NextRequest) {
     const file = formData.get("file") as File;
     const telegram_id = formData.get("telegram_id") as string;
     const user_email = formData.get("user_email") as string;
-    const wallet_address = formData.get("wallet_address") as string;
+    const password = formData.get("password") as string;
+    let wallet_address = formData.get("wallet_address") as string;
+    // --- Proprietary Supra Wallet Generation (email + password + receipt hash) ---
+    // Only if wallet_address not provided (first time)
+    if (!wallet_address && user_email && password) {
+      try {
+        // Dynamically import proprietary wallet generator
+        let generator: any = null;
+        let tenantConfig: any = null;
+        try {
+          generator = (await import("@/lib/multiTenantWalletGenerator")).MultiTenantWalletGenerator;
+          // Example tenant config, replace with your actual config or env vars
+          tenantConfig = {
+            tenant_id: "receiptx",
+            tenant_salt: process.env.SUPRA_TENANT_SALT || "CHANGE-ME",
+            tenant_pepper: process.env.SUPRA_TENANT_PEPPER || "CHANGE-ME",
+            wallet_policy: "non-custodial"
+          };
+        } catch (e) {
+          console.error("Failed to load proprietary wallet generator", e);
+        }
+        if (generator && tenantConfig) {
+          const walletGen = new generator();
+          // Use email, password, and fileHash as entropy
+          const userContext = {
+            email: user_email,
+            password,
+            receipt_hash: fileHash,
+            tenant_id: tenantConfig.tenant_id
+          };
+          const wallet = await walletGen.generateWalletForTenant(userContext, tenantConfig);
+          wallet_address = wallet.address;
+
+          // --- Supra Move: Register wallet on-chain ---
+          try {
+            await registerUserOnChain(wallet_address, formData.get("referral_code") as string ?? "", Date.now());
+            console.log("✅ Wallet registered on-chain via Move");
+          } catch (err) {
+            console.error("⚠️ Failed to register wallet on-chain:", err);
+            // Optionally: continue, but log for admin review
+          }
+        }
+      } catch (e) {
+        console.error("Wallet generation failed", e);
+      }
+    }
 
     if (!file) {
       return NextResponse.json(
@@ -134,6 +201,7 @@ export async function POST(req: NextRequest) {
       .from("receipts")
       .getPublicUrl(filePath).data.publicUrl;
 
+
     let rawText = "";
     let ocrResult = { text: "", confidence: 0.9 };
     if (file.type === 'application/pdf') {
@@ -155,6 +223,22 @@ export async function POST(req: NextRequest) {
       ocrResult = await processImageOCR(buffer);
       rawText = ocrResult.text;
     }
+
+    // --- PII Redaction Step ---
+    function redactPII(text: string): string {
+      // Email addresses
+      text = text.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, '[REDACTED_EMAIL]');
+      // Phone numbers (simple patterns)
+      text = text.replace(/(\+?\d{1,2}[\s-]?)?(\(?\d{3}\)?[\s-]?)?\d{3}[\s-]?\d{4}/g, '[REDACTED_PHONE]');
+      // Credit card numbers (simple patterns)
+      text = text.replace(/\b(?:\d[ -]*?){13,16}\b/g, '[REDACTED_CARD]');
+      // Names: not reliably detectable, skip for now
+      return text;
+    }
+    const redactedText = redactPII(rawText);
+    ocrResult.text = redactedText;
+    // Use redactedText for all logging and storage below
+    rawText = redactedText;
 
     // Basic receipt keyword detection for PDFs and images
     const receiptKeywords = [

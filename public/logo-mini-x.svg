@@ -1,0 +1,24 @@
+<svg width="40" height="40" viewBox="96 40 120 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="rxPrimary" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="50%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#a21caf"/>
+    </linearGradient>
+  </defs>
+  <!-- Head -->
+  <rect x="96" y="40" width="120" height="120" rx="40"
+        fill="#0B0C10" stroke="url(#rxPrimary)" stroke-width="8"/>
+  <!-- Face panel -->
+  <rect x="116" y="75" width="80" height="60" rx="30"
+        fill="#050509" stroke="url(#rxPrimary)" stroke-width="5"/>
+  <!-- Eyes -->
+  <circle cx="146" cy="105" r="12" fill="url(#rxPrimary)"/>
+  <circle cx="186" cy="105" r="12" fill="url(#rxPrimary)"/>
+  <!-- Smile -->
+  <path d="M150 120 Q156 135 182 120"
+        stroke="#22d3ee" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <!-- Crossed Arms (X) -->
+  <rect x="135" y="135" width="70" height="14" rx="7" transform="rotate(25 170 142)" fill="#0B0C10" stroke="url(#rxPrimary)" stroke-width="5"/>
+  <rect x="135" y="135" width="70" height="14" rx="7" transform="rotate(-25 170 142)" fill="#0B0C10" stroke="url(#rxPrimary)" stroke-width="5"/>
+</svg>

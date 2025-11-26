@@ -1,8 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { usePrivy } from '@privy-io/react-auth';
-import Link from 'next/link';
+import { useState, useEffect } from "react";
+import { usePrivy } from "@privy-io/react-auth";
+import Link from "next/link";
+import Image from "next/image";
+import { redirect } from "next/navigation";
 
 export default function Home() {
   const { ready, authenticated, user, login, logout } = usePrivy();
@@ -12,26 +14,61 @@ export default function Home() {
     if (ready) setLoading(false);
   }, [ready]);
 
-  // Step 1: Wait for Privy to initialize
+  // Auto-redirect root '/'
+  if (typeof window !== "undefined" && window.location.pathname === "/") {
+    if (authenticated) {
+      redirect("/dashboard");
+    } else {
+      redirect("/landing");
+    }
+  }
+
+  const Logo = () => (
+    <div className="flex justify-center mb-8">
+      <Image
+        src="/logo.svg"
+        alt="ReceiptX Logo"
+        width={360}
+        height={160}
+        priority
+        className="drop-shadow-[0_0_30px_rgba(0,230,255,0.65)]"
+      />
+    </div>
+  );
+
+  // ---------------------------
+  // LOADING
+  // ---------------------------
   if (loading) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center bg-[#0B0C10] text-white">
-        <p className="text-gray-400 animate-pulse">Initializing ReceiptX...</p>
+      <main className="min-h-screen flex flex-col items-center justify-center bg-[#0B0C10] text-[#C9D2E5] px-4">
+        <Logo />
+        <p className="text-[#00E6FF] animate-pulse">Initializing ReceiptX...</p>
       </main>
     );
   }
 
-  // Step 2: If not authenticated
+  // ---------------------------
+  // NOT AUTHENTICATED
+  // ---------------------------
   if (!authenticated) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center bg-[#0B0C10] text-white">
-        <h1 className="text-4xl font-bold text-cyan-400 mb-6">ReceiptX</h1>
-        <p className="text-gray-400 mb-8">
+      <main className="min-h-screen flex flex-col items-center justify-center bg-[#0B0C10] text-[#C9D2E5] px-4">
+        <Logo />
+
+        <p className="text-[#C9D2E5] text-center mb-10 text-lg">
           Turn your everyday receipts into crypto rewards ⚡
         </p>
+
         <button
           onClick={login}
-          className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-90 transition-all"
+          className="
+            px-10 py-4 rounded-xl text-lg font-semibold text-white
+            bg-[linear-gradient(90deg,#00E6FF,#7A5CFF,#D048FF)]
+            shadow-[0_0_24px_rgba(0,230,255,0.55)]
+            hover:scale-[1.03] active:scale-[0.98]
+            transition-transform transition-shadow
+          "
         >
           Continue with Email
         </button>
@@ -39,50 +76,66 @@ export default function Home() {
     );
   }
 
-  // Step 3: Authenticated state
-  const email = user?.email?.address || '';
-  const wallet = user?.wallet?.address || '';
-  const userDisplay = email || wallet || 'User';
+  // ---------------------------
+  // AUTHENTICATED
+  // ---------------------------
+  const email = user?.email?.address || "";
+  const wallet = user?.wallet?.address || "";
+  const userDisplay = email || wallet || "User";
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-[#0B0C10] text-white">
-      <h1 className="text-4xl font-bold text-cyan-400 mb-6">Welcome to ReceiptX</h1>
-      <p className="text-gray-400 mb-8">
-        Hello, {userDisplay} 👋
+    <main className="min-h-screen flex flex-col items-center justify-center bg-[#0B0C10] text-[#C9D2E5] px-4">
+      <Logo />
+
+      <h1 className="text-3xl font-extrabold text-[#00E6FF] mb-3 drop-shadow-[0_0_15px_rgba(0,230,255,0.6)]">
+        Welcome back, {userDisplay} 👋
+      </h1>
+
+      <p className="text-[#C9D2E5] mb-10 text-center">
+        Manage your rewards, analytics, and AI-powered insights.
       </p>
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 w-full max-w-sm">
         <Link
           href="/dashboard"
-          className="bg-gradient-to-r from-purple-500 to-pink-600 px-6 py-3 rounded-xl text-center hover:opacity-90 transition-all"
+          className="px-6 py-3 rounded-xl text-center font-medium text-white
+          bg-[linear-gradient(90deg,#7A5CFF,#D048FF)]
+          hover:opacity-90 transition-opacity"
         >
           🏠 My Dashboard
         </Link>
 
         <Link
           href="/receipts/scan"
-          className="bg-gradient-to-r from-green-400 to-teal-500 px-6 py-3 rounded-xl text-center hover:opacity-90 transition-all"
+          className="px-6 py-3 rounded-xl text-center font-medium text-black
+          bg-[linear-gradient(90deg,#00FFA3,#00C7B7)]
+          hover:opacity-90 transition-opacity"
         >
           📸 Scan a Receipt
         </Link>
 
         <Link
           href="/business/dashboard"
-          className="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-3 rounded-xl text-center hover:opacity-90 transition-all"
+          className="px-6 py-3 rounded-xl text-center font-medium text-white
+          bg-[linear-gradient(90deg,#4FB8FF,#7A5CFF)]
+          hover:opacity-90 transition-opacity"
         >
           📊 View Analytics
         </Link>
 
         <Link
           href="/telegram"
-          className="bg-gradient-to-r from-pink-500 to-purple-600 px-6 py-3 rounded-xl text-center hover:opacity-90 transition-all"
+          className="px-6 py-3 rounded-xl text-center font-medium text-white
+          bg-[linear-gradient(90deg,#D048FF,#FF2BCB)]
+          hover:opacity-90 transition-opacity"
         >
           💫 Telegram Mini App
         </Link>
 
         <button
           onClick={logout}
-          className="border border-gray-500 mt-6 px-4 py-2 rounded-lg hover:bg-gray-800 transition-all"
+          className="mt-6 px-4 py-2 rounded-xl border border-[#2E3A4F] text-[#C9D2E5]
+          hover:bg-[#141824] transition-colors"
         >
           Log Out
         </button>

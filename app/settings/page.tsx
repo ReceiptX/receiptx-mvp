@@ -78,6 +78,7 @@ export default function SettingsPage() {
             onChange={e => setCode(e.target.value)}
             className="px-3 py-2 rounded"
             required
+            placeholder="Enter 2FA code"
           />
           <button type="submit" className="bg-cyan-600 text-white px-4 py-2 rounded font-semibold">
             Verify & Enable 2FA

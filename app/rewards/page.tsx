@@ -143,7 +143,7 @@ export default function RewardsMarketplace() {
   const displayRewards = selectedCategory || searchQuery ? rewards : rewards.filter(r => !r.featured);
 
   return (
-    <main className="min-h-screen bg-[#0B0C10] text-white p-6">
+    <main className="min-h-screen bg-rxBg text-rxText p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -168,7 +168,7 @@ export default function RewardsMarketplace() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && fetchRewards()}
-            className="w-full px-6 py-3 bg-[#1F2833] border border-cyan-400/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400"
+            className="w-full px-6 py-3 bg-rxCard border border-rxBlue/30 rounded-lg text-rxText placeholder-gray-500 focus:outline-none focus:border-rxBlue"
           />
         </div>
 
@@ -179,7 +179,7 @@ export default function RewardsMarketplace() {
             className={`px-6 py-2 rounded-full whitespace-nowrap transition ${
               selectedCategory === null
                 ? 'bg-cyan-400 text-black font-semibold'
-                : 'bg-[#1F2833] text-gray-400 hover:bg-[#2A3441]'
+                : 'bg-rxCard text-gray-400 hover:bg-rxPurple/30'
             }`}
           >
             All Rewards
@@ -191,7 +191,7 @@ export default function RewardsMarketplace() {
               className={`px-6 py-2 rounded-full whitespace-nowrap transition ${
                 selectedCategory === cat.id
                   ? 'bg-cyan-400 text-black font-semibold'
-                  : 'bg-[#1F2833] text-gray-400 hover:bg-[#2A3441]'
+                  : 'bg-rxCard text-gray-400 hover:bg-rxPurple/30'
               }`}
             >
               {cat.icon} {cat.name}
@@ -260,7 +260,7 @@ function RewardCard({
   const isAvailable = reward.available;
 
   return (
-    <div className="bg-[#1F2833] rounded-2xl p-6 border border-cyan-400/20 hover:border-cyan-400/50 transition">
+    <div className="bg-rxCard rounded-2xl p-6 border border-rxBlue/20 hover:border-rxBlue/50 transition">
       {/* Business Logo/Name */}
       <div className="flex items-center gap-3 mb-3">
         {reward.business_logo_url ? (

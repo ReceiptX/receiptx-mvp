@@ -1,0 +1,9 @@
+[package]
+name = "receiptx"
+version = "1.0.0"
+
+[addresses]
+receiptx = "0xab32f19fbde086ae37772a9daf2e0107c597cf5f2a8b7cb691852040319a8c67"
+
+[dependencies]
+MoveStdlib = { git = "https://github.com/move-language/move", subdir = "language/move-stdlib", rev = "main" }

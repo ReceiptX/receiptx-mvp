@@ -34,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="bg-gradient-to-br from-[#0B0C10] via-[#181A2A] to-[#232946] text-white min-h-screen flex flex-col">
         <Providers>
-          <WalletAutoGenerator />
+          {/* <WalletAutoGenerator /> removed from global layout */}
           <Navigation />
           <div className="flex-1 flex flex-col">
             {children}

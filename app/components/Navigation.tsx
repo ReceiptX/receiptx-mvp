@@ -14,50 +14,52 @@ export default function Navigation() {
   };
 
   return (
-    <nav className="sticky top-0 bg-[#0B0C10]/95 backdrop-blur border-b border-cyan-400/20 z-50">
+    <nav className="sticky top-0 bg-gradient-to-r from-cyan-900 via-blue-900 to-purple-900/95 backdrop-blur border-b border-cyan-700/30 z-50 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2" aria-label="Home">
-            <img src="/logo.svg" alt="ReceiptX Logo" className="w-12 h-auto max-w-[48px] drop-shadow-xl object-contain" />
-          </Link>
+        <div className="flex items-center justify-end">
 
           {/* Navigation Links */}
           {authenticated ? (
             <div className="flex items-center gap-6">
               <Link
                 href="/dashboard"
-                className="text-gray-300 hover:text-cyan-400 transition"
+                className="text-white hover:text-cyan-200 font-semibold transition"
               >
                 Dashboard
               </Link>
               <Link
                 href="/receipts/scan"
-                className="text-gray-300 hover:text-cyan-400 transition"
+                className="text-white hover:text-cyan-200 font-semibold transition"
               >
                 Scan Receipt
               </Link>
               <Link
                 href="/rewards"
-                className="text-gray-300 hover:text-cyan-400 transition"
+                className="text-white hover:text-cyan-200 font-semibold transition"
               >
                 Rewards
               </Link>
               <Link
                 href="/nfts"
-                className="text-gray-300 hover:text-cyan-400 transition"
+                className="text-white hover:text-cyan-200 font-semibold transition"
               >
                 NFTs
               </Link>
               <Link
                 href="/staking"
-                className="text-gray-300 hover:text-cyan-400 transition"
+                className="text-white hover:text-cyan-200 font-semibold transition"
               >
                 Staking
               </Link>
+              <Link
+                href="/leaderboard"
+                className="text-white hover:text-cyan-200 font-semibold transition"
+              >
+                Leaderboard
+              </Link>
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition font-semibold"
+                className="px-4 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-black rounded-lg hover:from-cyan-300 hover:to-purple-400 transition font-semibold"
               >
                 Logout
               </button>
@@ -66,18 +68,25 @@ export default function Navigation() {
             <div className="flex items-center gap-4">
               <Link
                 href="/landing"
-                className="text-gray-300 hover:text-cyan-400 transition"
+                className="text-white hover:text-cyan-200 font-semibold transition"
               >
                 About
               </Link>
+              <Link
+                href="/leaderboard"
+                className="text-white hover:text-cyan-200 font-semibold transition"
+              >
+                Leaderboard
+              </Link>
               <button
                 onClick={login}
-                className="px-6 py-2 bg-cyan-400 text-black rounded-lg hover:bg-cyan-300 transition font-semibold"
+                className="px-6 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-black rounded-lg hover:from-cyan-300 hover:to-purple-400 transition font-semibold"
               >
                 Login
               </button>
             </div>
           )}
+
         </div>
       </div>
     </nav>
