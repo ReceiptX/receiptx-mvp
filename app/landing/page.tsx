@@ -145,7 +145,6 @@ export default function LandingPage() {
           <input
             type="file"
             accept="image/*"
-            capture="environment"
             required
             className="w-full px-4 py-3 rounded-lg bg-[#232946] border border-cyan-700/30 text-white"
             onChange={e => setReceiptFile(e.target.files?.[0] || null)}

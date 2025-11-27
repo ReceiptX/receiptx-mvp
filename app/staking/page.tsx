@@ -243,8 +243,13 @@ export default function StakingPage() {
                   <p className="text-sm mb-2">Progress to {nextTier.tier}</p>
                   <div className="w-full bg-white/20 rounded-full h-3 mb-2">
                     <div
-                      className="bg-white rounded-full h-3 transition-all"
-                      style={{ width: `${Math.min((currentStaked / nextTier.min_aia_staked) * 100, 100)}%` }}
+                      className={
+                        `bg-white rounded-full h-3 transition-all` +
+                        ` ` +
+                        (nextTier.min_aia_staked > 0
+                          ? `w-[${Math.min((currentStaked / nextTier.min_aia_staked) * 100, 100)}%]`
+                          : 'w-0')
+                      }
                       aria-label="Progress bar"
                     ></div>
                   </div>

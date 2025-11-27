@@ -1,35 +1,6 @@
-import { NextResponse } from 'next/server';
-
-// This should be replaced with your real Telegram bot token and provider token
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const PROVIDER_TOKEN = process.env.TELEGRAM_PROVIDER_TOKEN;
-
-export async function POST(request: Request) {
-  const { tier } = await request.json();
-  if (!tier) {
-    return NextResponse.json({ error: 'Missing NFT tier' }, { status: 400 });
-  }
-
-  // You should validate the tier and price here
-
-  // Call Telegram Bot API to create invoice (server-side, not from frontend)
-  // Example: https://core.telegram.org/bots/api#createinvoice
-  // This is a placeholder. In production, use node-fetch or axios to call the Telegram API.
-
-  // Example invoice payload (replace with real API call and response)
-  const invoiceSlug = `receiptx_nft_${tier.name.replace(/\s+/g, '_').toLowerCase()}`;
-
-  // Return the invoice slug or payload for the frontend to use
-  return NextResponse.json({
-    invoiceSlug,
-    provider_token: PROVIDER_TOKEN,
-    title: tier.name,
-    description: `Purchase the ${tier.name} for ReceiptX.`,
-    currency: 'USD',
-    price: tier.price,
-  });
-}import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin as supabase } from "@/lib/supabaseClient";
+
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 

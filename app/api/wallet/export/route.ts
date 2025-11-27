@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+// ...existing code...
 import { sendSecurityEmail } from '@/lib/emailService';
 import { checkRateLimit, getRateLimitHeaders } from '@/lib/rateLimiter';
 import { supabase } from '@/lib/supabaseClient';
