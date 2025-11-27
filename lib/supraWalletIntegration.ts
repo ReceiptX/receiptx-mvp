@@ -190,7 +190,7 @@ export class SupraWalletIntegration {
         symbol: 'SUPRA',
         decimals: 18
       },
-      rpcUrls: [process.env.SUPRA_TESTNET_RPC || 'https://rpc-testnet.supra.com'],
+      rpcUrls: [process.env.NEXT_PUBLIC_SUPRA_TESTNET_RPC || 'https://rpc-testnet.supra.com'],
       blockExplorerUrls: ['https://explorer-testnet.supra.com']
     };
 
@@ -275,8 +275,8 @@ export class SupraWalletIntegration {
 
     const { createClient } = await import("@supabase/supabase-js");
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      // Use supabaseAdmin from server/supabaseAdmin
+      require('../server/supabaseAdmin').supabaseAdmin
     );
 
     // Check if wallet already exists
@@ -325,8 +325,8 @@ export class SupraWalletIntegration {
 
     const { createClient } = await import("@supabase/supabase-js");
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      // Use supabaseAdmin from server/supabaseAdmin
+      require('../server/supabaseAdmin').supabaseAdmin
     );
 
     let query = supabase.from("user_wallets").select("wallet_address, derivation_path");

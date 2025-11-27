@@ -128,10 +128,9 @@ export class MultiTenantWalletGenerator {
     tenantId: string
   ): Promise<void> {
     const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    // Use supabaseAdmin from server/supabaseAdmin
+    const { supabaseAdmin } = require('../server/supabaseAdmin');
+    const supabase = supabaseAdmin;
     
     // Store with tenant ownership
     await supabase.from("user_wallets").insert({
@@ -197,24 +196,26 @@ sole CUSTODIAN and LEGAL OWNER of all wallets generated using their tenant confi
 // Example 1: ReceiptX's own users
 const receiptxConfig: TenantConfig = {
   tenant_id: "receiptx",
-  tenant_salt: process.env.WEB2WEB3_SECRET_KEY!,
-  tenant_pepper: process.env.WEB2WEB3_PEPPER!,
+  // Import from server/tenantKeys
+  tenant_salt: require('../server/tenantKeys').RECEIPTX_TENANT_SALT!,
+  tenant_pepper: require('../server/tenantKeys').RECEIPTX_TENANT_PEPPER!,
   wallet_policy: "custodial"
 };
 
 // Example 2: Starbucks licensed deployment
 const starbucksConfig: TenantConfig = {
   tenant_id: "starbucks",
-  tenant_salt: process.env.STARBUCKS_WALLET_SALT!,  // They control this
-  tenant_pepper: process.env.STARBUCKS_WALLET_PEPPER!, // They backup this
+  // For demo, fallback to RECEIPTX_TENANT_SALT/PEPPER
+  tenant_salt: require('../server/tenantKeys').RECEIPTX_TENANT_SALT!,
+  tenant_pepper: require('../server/tenantKeys').RECEIPTX_TENANT_PEPPER!,
   wallet_policy: "custodial"
 };
 
 // Example 3: Circle K with non-custodial wallets (users control keys)
 const circlekConfig: TenantConfig = {
   tenant_id: "circlek",
-  tenant_salt: process.env.CIRCLEK_WALLET_SALT!,
-  tenant_pepper: process.env.CIRCLEK_WALLET_PEPPER!,
+  tenant_salt: require('../server/tenantKeys').RECEIPTX_TENANT_SALT!,
+  tenant_pepper: require('../server/tenantKeys').RECEIPTX_TENANT_PEPPER!,
   wallet_policy: "non-custodial" // Users export keys to own wallet
 };
 */

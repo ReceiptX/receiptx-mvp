@@ -2,7 +2,13 @@
 async function encryptPrivateKey(privateKey: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(privateKey);
-  const secretKey = process.env.WEB2WEB3_SECRET_KEY || 'default-secret-key';
+  // Import secretKey from server/tenantKeys or fallback
+  let secretKey: string;
+  try {
+    secretKey = require('../server/tenantKeys').RECEIPTX_TENANT_SALT;
+  } catch {
+    secretKey = 'default-secret-key';
+  }
   const keyData = encoder.encode(secretKey);
 
   const cryptoKey = await crypto.subtle.importKey(
@@ -74,9 +80,13 @@ export class EmailDeterministicWallet {
     const normalizedEmail = email.toLowerCase().trim();
     
     // Get application pepper (server-side secret)
-    const pepper = process.env.WEB2WEB3_PEPPER;
+    // Import pepper from server/tenantKeys
+    let pepper: string | undefined;
+    try {
+      pepper = require('../server/tenantKeys').RECEIPTX_TENANT_PEPPER;
+    } catch {}
     if (!pepper) {
-      throw new Error('WEB2WEB3_PEPPER not configured');
+      throw new Error('RECEIPTX_TENANT_PEPPER not configured');
     }
     
     // Derive private key using PBKDF2
@@ -189,10 +199,9 @@ export class EmailDeterministicWallet {
     telegram_id?: string
   ): Promise<void> {
     const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    // Use supabaseAdmin from server/supabaseAdmin
+    const { supabaseAdmin } = require('../server/supabaseAdmin');
+    const supabase = supabaseAdmin;
     
     // Check if wallet already exists for this email
     const { data: existing } = await supabase

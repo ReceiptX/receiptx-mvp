@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  productionBrowserSourceMaps: false,
+  swcMinify: true,
   // Temporarily disable TypeScript build errors for Netlify deployment
   // Proprietary modules have type mismatches that need refactoring
   typescript: {

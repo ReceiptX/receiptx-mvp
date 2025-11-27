@@ -54,8 +54,8 @@ export class ReceiptValidator {
   static async checkDuplicate(receiptHash: string): Promise<boolean> {
     const { createClient } = await import("@supabase/supabase-js");
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      // Use supabaseAdmin from server/supabaseAdmin
+      require('../server/supabaseAdmin').supabaseAdmin
     );
     
     const { data, error } = await supabase
@@ -217,10 +217,9 @@ export class ReceiptValidator {
     analysis: ReceiptAnalysis
   ): Promise<void> {
     const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    // Use supabaseAdmin from server/supabaseAdmin
+    const { supabaseAdmin } = require('../server/supabaseAdmin');
+    const supabase = supabaseAdmin;
     
     await supabase.from("receipts").update({
       receipt_hash: analysis.receipt_hash,
@@ -242,10 +241,9 @@ export class ReceiptValidator {
     average_fraud_score: number;
   }> {
     const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    // Use supabaseAdmin from server/supabaseAdmin
+    const { supabaseAdmin } = require('../server/supabaseAdmin');
+    const supabase = supabaseAdmin;
     
     const { data, error } = await supabase
       .from("receipts")
