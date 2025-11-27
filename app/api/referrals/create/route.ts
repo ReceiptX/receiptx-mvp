@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { user_email, telegram_id, wallet_address } = body;
+    const { user_email, telegram_id, wallet_address, custom_code } = body;
 
     // At least one identifier required
     if (!user_email && !telegram_id && !wallet_address) {
@@ -20,9 +20,6 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-
-    // Generate unique referral code
-    const referralCode = crypto.randomBytes(6).toString('hex').toUpperCase();
 
     // Check if user already has a referral code
     const { data: existing } = await supabase
@@ -39,6 +36,23 @@ export async function POST(req: NextRequest) {
         referral_link: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/signup?ref=${existing[0].referral_code}`,
         is_new: false
       });
+    }
+
+    // If custom_code is provided, check for duplicates
+    let referralCode = custom_code ? custom_code.trim().toUpperCase() : crypto.randomBytes(6).toString('hex').toUpperCase();
+    if (custom_code) {
+      const { data: codeExists } = await supabase
+        .from("referrals")
+        .select("referral_code")
+        .eq("referral_code", referralCode)
+        .limit(1);
+      if (codeExists && codeExists.length > 0) {
+        return NextResponse.json({
+          success: false,
+          error: "This referral code is already taken. Please choose another.",
+          code_taken: true
+        }, { status: 409 });
+      }
     }
 
     return NextResponse.json({

@@ -162,8 +162,8 @@ export default function WalletSelector({
       )}
 
       <div className="mt-6 text-sm text-gray-500 text-center">
-        <p>Don't have a wallet? No problem!</p>
-        <p>An email-based wallet will be created for you automatically.</p>
+        <div>Don't have a wallet? No problem!</div>
+        <div>An email-based wallet will be created for you automatically.</div>
       </div>
     </div>
   );

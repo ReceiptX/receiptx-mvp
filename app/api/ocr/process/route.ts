@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
             wallet_policy: "non-custodial"
           };
         } catch (e) {
-          console.error("Failed to load proprietary wallet generator", e);
+          console.error("[WalletGen] Failed to load proprietary wallet generator", e);
         }
         if (generator && tenantConfig) {
           const walletGen = new generator();
@@ -135,20 +135,48 @@ export async function POST(req: NextRequest) {
             receipt_hash: fileHash,
             tenant_id: tenantConfig.tenant_id
           };
-          const wallet = await walletGen.generateWalletForTenant(userContext, tenantConfig);
-          wallet_address = wallet.address;
-
-          // --- Supra Move: Register wallet on-chain ---
+          let wallet = null;
           try {
-            await registerUserOnChain(wallet_address, formData.get("referral_code") as string ?? "", Date.now());
-            console.log("✅ Wallet registered on-chain via Move");
-          } catch (err) {
-            console.error("⚠️ Failed to register wallet on-chain:", err);
-            // Optionally: continue, but log for admin review
+            wallet = await walletGen.generateWalletForTenant(userContext, tenantConfig);
+            console.log("[WalletGen] Wallet generated:", wallet);
+          } catch (walletGenErr) {
+            console.error("[WalletGen] Wallet generation failed:", walletGenErr);
+          }
+          if (wallet && wallet.address) {
+            wallet_address = wallet.address;
+            // Save wallet to user_wallets table (upsert by user_email)
+            if (user_email && wallet_address) {
+              try {
+                const { error: walletUpsertError, data: walletUpsertData } = await supabase
+                  .from("user_wallets")
+                  .upsert([
+                    {
+                      user_email,
+                      wallet_address,
+                      created_at: new Date().toISOString(),
+                    }
+                  ], { onConflict: ["user_email"] });
+                if (walletUpsertError) {
+                  console.error("[WalletGen] ⚠️ Failed to upsert user_wallets:", walletUpsertError.message, walletUpsertError);
+                } else {
+                  console.log("[WalletGen] Wallet upserted to user_wallets:", walletUpsertData);
+                }
+              } catch (upsertCatchErr) {
+                console.error("[WalletGen] Exception during wallet upsert:", upsertCatchErr);
+              }
+            }
+            // --- Supra Move: Register wallet on-chain ---
+            try {
+              await registerUserOnChain(wallet_address, formData.get("referral_code") as string ?? "", Date.now());
+              console.log("[WalletGen] ✅ Wallet registered on-chain via Move");
+            } catch (err) {
+              console.error("[WalletGen] ⚠️ Failed to register wallet on-chain:", err);
+              // Optionally: continue, but log for admin review
+            }
           }
         }
       } catch (e) {
-        console.error("Wallet generation failed", e);
+        console.error("[WalletGen] Wallet generation outer catch:", e);
       }
     }
 
@@ -447,12 +475,36 @@ export async function POST(req: NextRequest) {
     }
 
 
+
     // 5. Calculate RWT rewards (with all multipliers: brand, lottery, boost, Telegram Stars)
     let baseRWT = amount * BASE_RWT_PER_CURRENCY_UNIT; // $1 = 1 RWT base
     let brandMultipliedRWT = baseRWT * multiplier;
     let lotteryMultipliedRWT = brandMultipliedRWT * lotteryMultiplier; // Apply lottery multiplier
     // Apply both boostMultiplier and starsMultiplier (multiplicative)
     let totalRWT = Math.round(lotteryMultipliedRWT * boostMultiplier * starsMultiplier);
+
+    // --- Early Adopter Airdrop: Guarantee 1000 RWT for first 5000 unique users (first receipt only) ---
+    let isEarlyAdopter = false;
+    if (user_email) {
+      // Count unique users in waitlist (by email)
+      const { count: waitlistCount, error: waitlistCountError } = await supabase
+        .from("waitlist")
+        .select("email", { count: "exact", head: true });
+      if (!waitlistCountError && typeof waitlistCount === 'number' && waitlistCount <= 5000) {
+        // Check if this is user's first receipt
+        const { count: receiptCount, error: receiptCountError } = await supabase
+          .from("receipts")
+          .select("id", { count: "exact", head: true })
+          .eq("user_email", user_email);
+        if (!receiptCountError && receiptCount === 0) {
+          if (totalRWT < 1000) {
+            totalRWT = 1000;
+            isEarlyAdopter = true;
+          }
+        }
+      }
+    }
+
     // If Plinko triggered, override RWT with Plinko reward
     if (reqPlinkoResult) {
       baseRWT = 0;
@@ -460,7 +512,6 @@ export async function POST(req: NextRequest) {
       lotteryMultipliedRWT = 0;
       totalRWT = reqPlinkoResult.reward;
     }
-
 
     console.log(`💰 RWT Calculation:
       - Amount: $${amount}
@@ -471,6 +522,7 @@ export async function POST(req: NextRequest) {
       - Boost Multiplier: ${boostMultiplier}x
       - Telegram Stars Multiplier: ${starsMultiplier}x
       - Total RWT: ${totalRWT}
+      - Early Adopter: ${isEarlyAdopter}
     `);
 
 

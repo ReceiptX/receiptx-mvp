@@ -317,6 +317,16 @@ export default function DashboardPage() {
                 {copied ? "Copied! ✓" : "Copy"}
               </button>
             </div>
+            {stats?.referralLink && (
+              <a
+                href={stats.referralLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block mt-2 text-cyan-400 underline break-all hover:text-cyan-300 text-sm"
+              >
+                {stats.referralLink}
+              </a>
+            )}
             <p className="text-sm text-gray-400 mt-2">
               Share this link to earn 5 AIA per referral (10 AIA if they scan Starbucks, Circle K, or McDonald&apos;s)
             </p>

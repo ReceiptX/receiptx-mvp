@@ -1,4 +1,5 @@
 <svg width="900" height="380" viewBox="0 0 900 380" xmlns="http://www.w3.org/2000/svg">
+<svg width="900" height="380" viewBox="0 0 900 380" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="rxPrimary" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#22d3ee"/>
@@ -59,25 +60,16 @@
       </g>
       <!-- Store logo text -->
       <text x="100" y="190"
-            text-anchor="middle"
-            font-family="monospace, 'Courier New', Courier"
-            font-weight="bold"
-            font-size="38"
-            letter-spacing="2"
-            fill="#222">
-        RECEIPTX
+        text-anchor="middle"
+        font-family="monospace, 'Courier New', Courier"
+        font-weight="bold"
+        font-size="38"
+        letter-spacing="2"
+        fill="url(#rxPrimary)">
+        X
       </text>
-      <!-- Dashed line -->
-      <line x1="30" y1="205" x2="170" y2="205" stroke="#bbb" stroke-width="2" stroke-dasharray="6,6"/>
-      <!-- Tagline -->
-      <text x="100" y="230"
-            text-anchor="middle"
-            font-family="monospace, 'Courier New', Courier"
-            font-size="18"
-            letter-spacing="2"
-            fill="#444">
-        REWARDS – ANALYTICS – AI
-      </text>
+      <!-- Dashed line (optional, subtle) -->
+      <line x1="60" y1="205" x2="140" y2="205" stroke="#bbb" stroke-width="1.5" stroke-dasharray="4,6" opacity="0.3"/>
     </g>
     </g>
     <!-- Removed old logo text group for store logo effect -->

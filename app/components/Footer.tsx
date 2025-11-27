@@ -8,7 +8,7 @@ export default function Footer() {
           {/* Company Info */}
           <div>
             <div className="mb-4">
-              <img src="/logo-mini.svg" alt="ReceiptX mini logo" width={32} height={32} />
+              <img src="/logo-mini-x.svg" alt="ReceiptX mini X logo" width={32} height={32} />
             </div>
             <p className="text-gray-400 text-sm">
               Turn your everyday receipts into crypto rewards.
