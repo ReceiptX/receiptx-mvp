@@ -1,8 +1,11 @@
 'use client';
 
 import { usePrivy } from '@privy-io/react-auth';
+
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+
+const isTestnet = process.env.NEXT_PUBLIC_NETWORK === 'testnet' || process.env.NODE_ENV !== 'production';
 
 export default function Navigation() {
   const { authenticated, login, logout } = usePrivy();
@@ -27,30 +30,34 @@ export default function Navigation() {
               >
                 Dashboard
               </Link>
-              <Link
-                href="/receipts/scan"
-                className="text-white hover:text-cyan-200 font-semibold transition"
-              >
-                Scan Receipt
-              </Link>
-              <Link
-                href="/rewards"
-                className="text-white hover:text-cyan-200 font-semibold transition"
-              >
-                Rewards
-              </Link>
-              <Link
-                href="/nfts"
-                className="text-white hover:text-cyan-200 font-semibold transition"
-              >
-                NFTs
-              </Link>
-              <Link
-                href="/staking"
-                className="text-white hover:text-cyan-200 font-semibold transition"
-              >
-                Staking
-              </Link>
+              {!isTestnet && (
+                <>
+                  <Link
+                    href="/receipts/scan"
+                    className="text-white hover:text-cyan-200 font-semibold transition"
+                  >
+                    Scan Receipt
+                  </Link>
+                  <Link
+                    href="/rewards"
+                    className="text-white hover:text-cyan-200 font-semibold transition"
+                  >
+                    Rewards
+                  </Link>
+                  <Link
+                    href="/nfts"
+                    className="text-white hover:text-cyan-200 font-semibold transition"
+                  >
+                    NFTs
+                  </Link>
+                  <Link
+                    href="/staking"
+                    className="text-white hover:text-cyan-200 font-semibold transition"
+                  >
+                    Staking
+                  </Link>
+                </>
+              )}
               <Link
                 href="/leaderboard"
                 className="text-white hover:text-cyan-200 font-semibold transition"

@@ -4,5 +4,4 @@
 
 # Disable scanning entirely — safest and cleanest fix
 [build.environment]
-  SECRETS_SCAN_ENABLED = "false"
   NODE_VERSION = "20"
