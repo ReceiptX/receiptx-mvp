@@ -3,4 +3,5 @@
   publish = ".next"
 
 [build.environment]
-  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_"
+  SECRETS_SCAN_OMIT_PATHS = ".next"
+  SECRETS_SCAN_SMART_DETECTION_OMIT_VALUES = "true"
