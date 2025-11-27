@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, FormEvent } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { WalletAutoGenerator } from "../components/WalletAutoGenerator";
+const CameraCapture = dynamic(() => import("../components/CameraCapture"), { ssr: false });
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -158,16 +160,29 @@ export default function LandingPage() {
             autoComplete="new-password"
           />
 
-          <input
-            type="file"
-            accept="image/*"
-            required
-            className="w-full px-4 py-3 rounded-lg bg-[#232946] border border-cyan-700/30 text-white"
-            onChange={e => setReceiptFile(e.target.files?.[0] || null)}
-            disabled={waitlistSuccess}
-            aria-label="Upload a photo of your receipt"
-            title="Upload a photo of your receipt"
-          />
+
+          {/* Camera capture for desktop/mobile */}
+          <div className="w-full flex flex-col gap-2">
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              required={!receiptFile}
+              className="w-full px-4 py-3 rounded-lg bg-[#232946] border border-cyan-700/30 text-white"
+              onChange={e => setReceiptFile(e.target.files?.[0] || null)}
+              disabled={waitlistSuccess}
+              aria-label="Upload a photo of your receipt"
+              title="Upload a photo of your receipt"
+            />
+            <span className="text-xs text-slate-400 text-center">or</span>
+            <CameraCapture
+              onCapture={file => setReceiptFile(file)}
+              disabled={waitlistSuccess}
+            />
+            {receiptFile && (
+              <span className="text-green-400 text-xs mt-1">Photo ready for upload: {receiptFile.name}</span>
+            )}
+          </div>
 
           <button
             type="submit"

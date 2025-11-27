@@ -71,57 +71,41 @@ export default function LeaderboardPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-rxBg text-rxText flex flex-col items-center px-4 py-10">
+    <main className="min-h-screen bg-gradient-to-br from-[#0B0C10] via-[#1F2235] to-[#232946] text-white flex flex-col items-center px-4 py-10">
       <div className="w-full max-w-4xl">
-        <h1 className="text-4xl font-extrabold text-center mb-6 text-rxCyan drop-shadow-[0_0_20px_rgba(0,230,255,0.6)]">
-          ReceiptX Referral Leaderboard
-        </h1>
+        <h1 className="text-4xl font-extrabold text-center mb-6 bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow">ReceiptX Referral Leaderboard</h1>
 
         {/* Live waitlist counter */}
         <div className="mb-10 flex flex-col items-center">
-          <p className="text-sm uppercase tracking-[0.3em] text-gray-400">
-            Live Waitlist Signups
-          </p>
-          <p className="text-5xl font-extrabold mt-2 text-rxAqua">
-            {waitlistCount.toLocaleString()}
-          </p>
+          <p className="text-sm uppercase tracking-[0.3em] text-slate-300">Live Waitlist Signups</p>
+          <p className="text-5xl font-extrabold mt-2 bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow">{waitlistCount.toLocaleString()}</p>
         </div>
 
         {/* Global leaderboard */}
         <section className="mb-12">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-rxAqua">Global Top 10</h2>
-            <span className="text-xs text-gray-400">
-              Top 10 each earn <span className="text-rxMagenta font-semibold">5,000 AIA</span>
-            </span>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">Global Top 10</h2>
+            <span className="text-xs text-slate-300">Top 10 each earn <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent font-semibold">5,000 AIA</span></span>
           </div>
 
           <div className="space-y-2">
             {globalLB.map((row, idx) => (
               <div
                 key={row.referrer_code + idx}
-                className="flex items-center justify-between bg-[#151820] rounded-xl px-4 py-3"
+                className="flex items-center justify-between bg-[#232946] border border-cyan-700/30 rounded-xl px-4 py-3 shadow-lg"
               >
                 <div className="flex items-center gap-3">
-                  <span className="w-6 text-center font-bold text-rxCyan">
-                    {idx + 1}
-                  </span>
-                  <span className="text-sm">
-                    {row.users?.email || 'Unknown'}
-                  </span>
+                  <span className="w-6 text-center font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow">{idx + 1}</span>
+                  <span className="text-sm text-slate-200">{row.users?.email || 'Unknown'}</span>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-gray-400">Referrals</p>
-                  <p className="text-lg font-bold text-rxPurple">
-                    {row.referral_count}
-                  </p>
+                  <p className="text-sm text-slate-400">Referrals</p>
+                  <p className="text-lg font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow">{row.referral_count}</p>
                 </div>
               </div>
             ))}
             {globalLB.length === 0 && (
-              <p className="text-center text-gray-500 text-sm">
-                No referrals yet. Be the first to invite your friends!
-              </p>
+              <p className="text-center text-slate-400 text-sm">No referrals yet. Be the first to invite your friends!</p>
             )}
           </div>
         </section>
@@ -129,38 +113,28 @@ export default function LeaderboardPage() {
         {/* Telegram leaderboard */}
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-rxMagenta">Telegram Top 10</h2>
-            <span className="text-xs text-gray-400">
-              Telegram-only leaderboard
-            </span>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">Telegram Top 10</h2>
+            <span className="text-xs text-slate-300">Telegram-only leaderboard</span>
           </div>
 
           <div className="space-y-2">
             {telegramLB.map((row, idx) => (
               <div
                 key={row.referrer_code + idx}
-                className="flex items-center justify-between bg-[#151820] rounded-xl px-4 py-3"
+                className="flex items-center justify-between bg-[#232946] border border-cyan-700/30 rounded-xl px-4 py-3 shadow-lg"
               >
                 <div className="flex items-center gap-3">
-                  <span className="w-6 text-center font-bold text-rxPink">
-                    {idx + 1}
-                  </span>
-                  <span className="text-sm">
-                    {row.users?.email || 'Unknown'}
-                  </span>
+                  <span className="w-6 text-center font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow">{idx + 1}</span>
+                  <span className="text-sm text-slate-200">{row.users?.email || 'Unknown'}</span>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-gray-400">Referrals</p>
-                  <p className="text-lg font-bold text-rxPink">
-                    {row.referral_count}
-                  </p>
+                  <p className="text-sm text-slate-400">Referrals</p>
+                  <p className="text-lg font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow">{row.referral_count}</p>
                 </div>
               </div>
             ))}
             {telegramLB.length === 0 && (
-              <p className="text-center text-gray-500 text-sm">
-                No Telegram referrals yet. Share your link in the chat!
-              </p>
+              <p className="text-center text-slate-400 text-sm">No Telegram referrals yet. Share your link in the chat!</p>
             )}
           </div>
         </section>

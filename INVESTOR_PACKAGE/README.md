@@ -189,13 +189,13 @@ Last Updated: November 21, 2025
 **Company:** ReceiptX Technologies, Inc. (forming Q4 2025)
 
 **Founders:**
-- CEO/CTO: [Name] - [email]
-- COO/CFO: [Name] - [email]
+- CEO/CTO: Erica Stevenson - erica@receiptx.app
+- COO/CFO: Clayton Koepke - [clayton@receiptx.app]
 
 **Email:** founders@receiptx.com  
 **Telegram:** @Rec3iptxbot (try the MVP live!)  
 **GitHub:** github.com/ReceiptX/receiptx-mvp  
-**Website:** receiptx.com (launching December 2025)
+**Website:** receiptx.app (launching December 2025)
 
 **Office:** Remote-first (US-based)
 

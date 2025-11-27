@@ -168,35 +168,44 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-                  {/* Active Multiplier Banner */}
-                  {multiplierLoading ? null : stats?.activeMultiplier && stats.activeMultiplier.active && (
-                    <div className="mb-8 p-4 rounded-xl bg-gradient-to-r from-yellow-400 to-orange-500 text-black flex flex-col md:flex-row md:items-center md:justify-between shadow-lg">
-                      <div className="flex items-center gap-3">
-                        <span className="text-3xl">⚡</span>
-                        <span className="font-bold text-xl">Active Multiplier:</span>
-                        <span className="font-bold text-2xl">{stats.activeMultiplier.multiplier}x</span>
-                        <span className="ml-2 text-sm font-semibold bg-white/30 px-2 py-1 rounded">{stats.activeMultiplier.product_slug.replace('multiplier_', '').replace('_', '.')} Stars</span>
-                      </div>
-                      {stats.activeMultiplier.expires_at && (
-                        <div className="mt-2 md:mt-0 text-sm font-medium">
-                          Expires: {new Date(stats.activeMultiplier.expires_at).toLocaleString()}
-                        </div>
-                      )}
-                    </div>
-                  )}
-          <div>
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
+          <div className="flex-1">
+            {/* Active Multiplier Banner */}
+            {multiplierLoading ? null : stats?.activeMultiplier && stats.activeMultiplier.active && (
+              <div className="mb-8 p-4 rounded-xl bg-gradient-to-r from-yellow-400 to-orange-500 text-black flex flex-col md:flex-row md:items-center md:justify-between shadow-lg">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">⚡</span>
+                  <span className="font-bold text-xl">Active Multiplier:</span>
+                  <span className="font-bold text-2xl">{stats.activeMultiplier.multiplier}x</span>
+                  <span className="ml-2 text-sm font-semibold bg-white/30 px-2 py-1 rounded">{stats.activeMultiplier.product_slug.replace('multiplier_', '').replace('_', '.')} Stars</span>
+                </div>
+                {stats.activeMultiplier.expires_at && (
+                  <div className="mt-2 md:mt-0 text-sm font-medium">
+                    Expires: {new Date(stats.activeMultiplier.expires_at).toLocaleString()}
+                  </div>
+                )}
+              </div>
+            )}
             <h1 className="text-4xl font-bold text-white mb-2">Dashboard</h1>
             <p className="text-gray-300">
               Welcome back, {user?.email?.address || (user as any)?.telegram?.username || "User"}!
             </p>
           </div>
-          <button
-            onClick={() => router.push("/receipts/scan")}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition"
-          >
-            Scan Receipt
-          </button>
+          <div className="flex gap-2 items-center">
+            <button
+              onClick={fetchUserStats}
+              className="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-3 rounded-lg font-semibold transition"
+              title="Refresh metrics"
+            >
+              Refresh
+            </button>
+            <button
+              onClick={() => router.push("/receipts/scan")}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition"
+            >
+              Scan Receipt
+            </button>
+          </div>
         </div>
 
         {/* Risk Disclaimer */}

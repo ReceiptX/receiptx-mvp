@@ -30,34 +30,11 @@ export default function Navigation() {
               >
                 Dashboard
               </Link>
-              {!isTestnet && (
-                <>
-                  <Link
-                    href="/receipts/scan"
-                    className="text-white hover:text-cyan-200 font-semibold transition"
-                  >
-                    Scan Receipt
-                  </Link>
-                  <Link
-                    href="/rewards"
-                    className="text-white hover:text-cyan-200 font-semibold transition"
-                  >
-                    Rewards
-                  </Link>
-                  <Link
-                    href="/nfts"
-                    className="text-white hover:text-cyan-200 font-semibold transition"
-                  >
-                    NFTs
-                  </Link>
-                  <Link
-                    href="/staking"
-                    className="text-white hover:text-cyan-200 font-semibold transition"
-                  >
-                    Staking
-                  </Link>
-                </>
-              )}
+              {/* Upcoming features (disabled links) */}
+              <span className="text-white/50 font-semibold cursor-not-allowed" title="Coming soon">Scan Receipt <span className="ml-1 text-xs bg-cyan-700/40 px-2 py-0.5 rounded">Upcoming</span></span>
+              <span className="text-white/50 font-semibold cursor-not-allowed" title="Coming soon">Rewards <span className="ml-1 text-xs bg-cyan-700/40 px-2 py-0.5 rounded">Upcoming</span></span>
+              <span className="text-white/50 font-semibold cursor-not-allowed" title="Coming soon">NFTs <span className="ml-1 text-xs bg-cyan-700/40 px-2 py-0.5 rounded">Upcoming</span></span>
+              <span className="text-white/50 font-semibold cursor-not-allowed" title="Coming soon">Staking <span className="ml-1 text-xs bg-cyan-700/40 px-2 py-0.5 rounded">Upcoming</span></span>
               <Link
                 href="/leaderboard"
                 className="text-white hover:text-cyan-200 font-semibold transition"
