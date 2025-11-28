@@ -1,9 +1,7 @@
 'use client'
 
-
 import Image from 'next/image';
-
-
+import { useEffect, useRef, useState } from 'react';
 
 import { usePrivy } from '@privy-io/react-auth';
 import dynamic from 'next/dynamic';
@@ -60,6 +58,48 @@ export default function ReceiptScanPage() {
     setError(null);
     setFile(f);
     setPreview(URL.createObjectURL(f));
+  };
+
+  const submitReceipt = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // If user chose a file from device
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await fetch('/api/ocr/process', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await res.json();
+        setResult(data);
+        return;
+      }
+
+      // If preview is a base64 data URL (camera)
+      if (preview) {
+        const res = await fetch('/api/ocr/process', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: preview }),
+        });
+
+        const data = await res.json();
+        setResult(data);
+        return;
+      }
+
+      setError('No photo or file selected to submit.');
+    } catch (err: any) {
+      console.error('submitReceipt error', err);
+      setError(err?.message || 'Failed to submit receipt');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Only one return statement at the end:
