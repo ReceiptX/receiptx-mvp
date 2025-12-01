@@ -12,7 +12,7 @@ import { usePrivy } from "@privy-io/react-auth";
 
 export default function LandingPage() {
   const router = useRouter();
-  const { ready, authenticated } = usePrivy();
+  const { ready, authenticated, login } = usePrivy();
     // Redirect authenticated users to dashboard
     useEffect(() => {
       if (ready && authenticated) {
@@ -60,11 +60,23 @@ export default function LandingPage() {
       console.error("Error uploading receipt to OCR endpoint:", err);
     }
 
-    const { error } = await supabase
-      .from("waitlist")
-      .insert([{ email, referral_code: refParam || null }]);
+    // Submit to server-side waitlist endpoint (idempotent, server enqueues rewards)
+    // Password is sent to enable wallet generation but is NEVER stored
+    let joinOk = false;
+    try {
+      const res = await fetch('/api/waitlist/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, referral_code: refParam || null })
+      });
+      const json = await res.json();
+      joinOk = !!json?.success;
+    } catch (e) {
+      console.error('Waitlist submit error:', e);
+      joinOk = false;
+    }
 
-    if (!error) {
+    if (joinOk) {
       setWaitlistSuccess(true);
       const emailForRequests = email;
       setEmail("");
@@ -106,7 +118,7 @@ export default function LandingPage() {
       setCustomCodeError(null);
       setCustomCodeSuccess(false);
     } else {
-      console.error("Supabase waitlist insert error:", error);
+      console.error("Waitlist submission failed");
       alert("There was an error joining the waitlist. Please try again.");
     }
 
@@ -120,6 +132,28 @@ export default function LandingPage() {
       <section className="max-w-3xl w-full text-center mb-6">
         <img src="/logo.svg" alt="ReceiptX Logo" className="w-[340px] md:w-[520px] max-w-full mx-auto drop-shadow-[0_0_45px_rgba(0,230,255,0.7)]" />
       </section>
+
+      {/* PROPRIETARY WALLET GENERATOR CTA (hidden by default) */}
+      {process.env.NEXT_PUBLIC_SHOW_WALLET_CTA === 'true' && (
+        <section className="w-full max-w-3xl text-center mb-12">
+          <div className="w-full p-6 bg-white/5 border border-cyan-700/20 rounded-2xl mx-auto">
+            <h3 className="text-xl font-bold mb-2">Proprietary Wallet Generator</h3>
+            <p className="text-slate-300 mb-4">
+              Generate a deterministic multi-tenant wallet for secure, recoverable on-chain identity. Our proprietary generator
+              creates a tenant-scoped wallet using your email and password seed — stored only client-side for privacy.
+            </p>
+            <div className="flex items-center justify-center gap-4">
+              <button
+                onClick={() => router.push('/wallet/generate')}
+                className="px-6 py-3 rounded-lg bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 text-white font-extrabold shadow-lg hover:scale-105 transition"
+              >
+                Generate Wallet
+              </button>
+              <a href="/docs/wallets" className="text-cyan-300 underline self-center">Learn more</a>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* WHAT IS RECEIPTX */}
       <section className="w-full max-w-3xl text-center mb-12">
@@ -271,9 +305,15 @@ export default function LandingPage() {
             </div>
             <button
               className="mt-6 px-8 py-3 rounded-xl bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 text-white font-extrabold shadow-lg hover:scale-105 transition text-lg"
-              onClick={() => router.push("/dashboard")}
+              onClick={async () => {
+                // Trigger Privy login to authenticate the user
+                if (!authenticated) {
+                  await login();
+                }
+                router.push("/dashboard");
+              }}
             >
-              Go to Dashboard
+              Login & Go to Dashboard
             </button>
           </div>
         )}

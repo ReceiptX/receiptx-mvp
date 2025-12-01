@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import WebApp from '@twa-dev/sdk';
+import dynamic from 'next/dynamic';
 import './telegram.css';
+
+// Dynamic import to avoid SSR issues
+const CameraCapture = dynamic(() => import('../components/CameraCapture'), { ssr: false });
 
 export default function TelegramInner() {
   // -----------------------------
@@ -16,7 +20,7 @@ export default function TelegramInner() {
   const [userEmail, setUserEmail] = useState<string | null>(null)
 
   // -----------------------------
-  // 2. TELEGRAM INITIALIZATION & WALLET GENERATION
+  // 2. TELEGRAM INITIALIZATION & MULTI-TENANT WALLET GENERATION
   // -----------------------------
   useEffect(() => {
     async function init() {
@@ -30,9 +34,17 @@ export default function TelegramInner() {
         const user = WebApp.initDataUnsafe?.user
         if (user) {
           const userId = String(user.id)
+          const username = user.username || null
+          const firstName = user.first_name || null
+          const lastName = user.last_name || null
+          
           setTelegramId(userId)
           
-          // Auto-generate wallet for Telegram user
+          // Step 1: Ensure user exists in database with telegram_id
+          console.log('📱 Telegram user detected:', userId)
+          
+          // Step 2: Generate deterministic multi-tenant wallet
+          // This uses the seamless wallet generator with telegram_id as the identifier
           const walletRes = await fetch('/api/wallet/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -40,19 +52,34 @@ export default function TelegramInner() {
               telegram_id: userId,
               biometrics: {
                 timestamp: Date.now(),
-                platform: 'telegram'
+                platform: 'telegram',
+                telegram_username: username,
+                telegram_name: `${firstName || ''} ${lastName || ''}`.trim()
               }
             })
           })
           
           const walletData = await walletRes.json()
-          if (walletData.success) {
+          if (walletData.success && walletData.wallet) {
             setWalletAddress(walletData.wallet.address)
-            console.log('✅ Wallet generated:', walletData.wallet.address)
+            console.log('✅ Multi-tenant wallet generated/retrieved:', walletData.wallet.address)
+            console.log('🔐 Wallet is deterministic based on telegram_id:', userId)
+            
+            // Optional: Store wallet address in Telegram local storage for quick access
+            try {
+              WebApp.CloudStorage?.setItem('wallet_address', walletData.wallet.address)
+            } catch (e) {
+              // CloudStorage not available, no problem
+            }
+          } else {
+            console.error('❌ Wallet generation failed:', walletData.error)
+            // Still allow user to continue, but they won't have a wallet
           }
+        } else {
+          console.warn('⚠️ No Telegram user data available')
         }
       } catch (err) {
-        console.error("Initialization error:", err)
+        console.error("❌ Initialization error:", err)
       }
     }
     
@@ -78,74 +105,49 @@ export default function TelegramInner() {
   }, [])
 
   // -----------------------------
-  // 3. HANDLE RECEIPT IMAGE UPLOAD
+  // 3. HANDLE RECEIPT IMAGE CAPTURE (from Camera Component)
   // -----------------------------
-  const handleImageUpload = async (e: any) => {
-    const file = e.target.files?.[0]
+  const handleReceiptCapture = async (file: File) => {
     if (!file) return
 
     setLoading(true)
 
-    const reader = new FileReader()
+    try {
+      // Create FormData for multipart upload
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('telegram_id', telegramId || '')
+      if (walletAddress) formData.append('wallet_address', walletAddress)
 
-    reader.onloadend = async () => {
-      try {
-        const base64 = reader.result
+      // -----------------------------
+      // Step A: Upload to OCR endpoint
+      // -----------------------------
+      const ocrRes = await fetch('/api/ocr/process', {
+        method: 'POST',
+        body: formData
+      })
 
-        // -----------------------------
-        // Step A: OCR → extract brand, amount
-        // -----------------------------
-        const ocrRes = await fetch('/api/ocr/process', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: base64 })
-        })
+      const ocr = await ocrRes.json()
 
-        const ocr = await ocrRes.json()
-
-        if (!ocr.success) {
-          alert("OCR failed. Try a clearer image.")
-          return setLoading(false)
-        }
-
-        // -----------------------------
-        // Step B: Insert into Supabase
-        // -----------------------------
-        const submitRes = await fetch('/api/receipts/new', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            brand: ocr.brand,
-            amount: ocr.amount,
-            multiplier: ocr.multiplier,
-            location: ocr.location,
-            telegram_id: telegramId,
-            wallet_address: walletAddress || "pending-wallet",
-            metadata: ocr
-          })
-        })
-
-        const submit = await submitRes.json()
-
-        if (!submit.success) {
-          alert("Database error: " + submit.error)
-          return setLoading(false)
-        }
-
-        // -----------------------------
-        // Step C: Notify user
-        // -----------------------------
-        alert(`Success! You earned rewards for ${ocr.brand}.`)
-
-      } catch (error: any) {
-        console.error("Upload error:", error)
-        alert("Something went wrong.")
-      } finally {
+      if (!ocr.success) {
+        alert("OCR failed. Try a clearer image.")
         setLoading(false)
+        return
       }
-    }
 
-    reader.readAsDataURL(file)
+      // -----------------------------
+      // Step B: Success notification
+      // -----------------------------
+      const brand = ocr.brand || 'Unknown'
+      const rwtEarned = ocr.rwt_earned || 0
+      alert(`✅ Success! Receipt processed.\n🏪 Brand: ${brand}\n💰 RWT Earned: ${rwtEarned}`)
+
+    } catch (error: any) {
+      console.error("Upload error:", error)
+      alert("Something went wrong. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   // -----------------------------
@@ -227,22 +229,13 @@ export default function TelegramInner() {
         </p>
       )}
 
-      {/* Hidden file input */}
-      <input
-        type="file"
-        id="receipt-upload"
-        accept="image/*"
-        className="hidden"
-        onChange={handleImageUpload}
-      />
-
-      {/* Scan Button - ReceiptX Style */}
-      <label
-        htmlFor="receipt-upload"
-        className="telegram-scan-button px-8 py-4 rounded-xl text-white cursor-pointer hover:opacity-90 transition-all font-semibold"
-      >
-        📸 Scan Receipt
-      </label>
+      {/* Camera Component with Take Photo Button */}
+      <div className="mb-6 w-full max-w-md">
+        <CameraCapture 
+          onCapture={handleReceiptCapture}
+          disabled={loading}
+        />
+      </div>
 
       {/* Shop Button */}
       <button

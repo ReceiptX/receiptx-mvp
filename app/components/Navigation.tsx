@@ -30,6 +30,12 @@ export default function Navigation() {
               >
                 Dashboard
               </Link>
+              <Link
+                href="/whitepaper"
+                className="text-white hover:text-cyan-200 font-semibold transition"
+              >
+                Whitepaper
+              </Link>
               {/* Upcoming features (disabled links) */}
               <span className="text-white/50 font-semibold cursor-not-allowed" title="Coming soon">Scan Receipt <span className="ml-1 text-xs bg-cyan-700/40 px-2 py-0.5 rounded">Upcoming</span></span>
               <span className="text-white/50 font-semibold cursor-not-allowed" title="Coming soon">Rewards <span className="ml-1 text-xs bg-cyan-700/40 px-2 py-0.5 rounded">Upcoming</span></span>
@@ -55,6 +61,12 @@ export default function Navigation() {
                 className="text-white hover:text-cyan-200 font-semibold transition"
               >
                 About
+              </Link>
+              <Link
+                href="/whitepaper"
+                className="text-white hover:text-cyan-200 font-semibold transition"
+              >
+                Whitepaper
               </Link>
               <Link
                 href="/leaderboard"

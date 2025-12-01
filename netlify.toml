@@ -6,3 +6,14 @@
 [build.environment]
   NODE_VERSION = "20"
   SECRETS_SCAN_ENABLED = "false"
+
+# Scheduled function to process rewards every 15 minutes
+[functions]
+  directory = "netlify/functions"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Schedule reward processing (runs every 15 minutes)
+[functions."process-rewards"]
+  schedule = "*/15 * * * *"

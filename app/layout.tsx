@@ -11,8 +11,8 @@ import './globals.css'
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // 🧹 Suppress harmless hydration warnings
-    const originalError = console.error
-    console.error = (...args) => {
+    const originalError = console.error.bind(console)
+    console.error = (...args: any[]) => {
       if (
         typeof args[0] === 'string' &&
         (args[0].includes("didn't match the client properties") ||

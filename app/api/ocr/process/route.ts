@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { processImageOCR } from "@/lib/ocrService";
 import { supabase } from "@/lib/supabaseClient";
+import { supabaseService } from "@/lib/supabaseServiceClient";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rateLimiter";
 import crypto from "crypto";
 import { 
@@ -107,78 +108,6 @@ export async function POST(req: NextRequest) {
     const user_email = formData.get("user_email") as string;
     const password = formData.get("password") as string;
     let wallet_address = formData.get("wallet_address") as string;
-    // --- Proprietary Supra Wallet Generation (email + password + receipt hash) ---
-    // Only if wallet_address not provided (first time)
-    if (!wallet_address && user_email && password) {
-      try {
-        // Dynamically import proprietary wallet generator
-        let generator: any = null;
-        let tenantConfig: any = null;
-        try {
-          generator = (await import("@/lib/multiTenantWalletGenerator")).MultiTenantWalletGenerator;
-          // Example tenant config, replace with your actual config or env vars
-          tenantConfig = {
-            tenant_id: "receiptx",
-            tenant_salt: process.env.SUPRA_TENANT_SALT || "CHANGE-ME",
-            tenant_pepper: process.env.SUPRA_TENANT_PEPPER || "CHANGE-ME",
-            wallet_policy: "non-custodial"
-          };
-        } catch (e) {
-          console.error("[WalletGen] Failed to load proprietary wallet generator", e);
-        }
-        if (generator && tenantConfig) {
-          const walletGen = new generator();
-          // Use email, password, and fileHash as entropy
-          const userContext = {
-            email: user_email,
-            password,
-            receipt_hash: fileHash,
-            tenant_id: tenantConfig.tenant_id
-          };
-          let wallet = null;
-          try {
-            wallet = await walletGen.generateWalletForTenant(userContext, tenantConfig);
-            console.log("[WalletGen] Wallet generated:", wallet);
-          } catch (walletGenErr) {
-            console.error("[WalletGen] Wallet generation failed:", walletGenErr);
-          }
-          if (wallet && wallet.address) {
-            wallet_address = wallet.address;
-            // Save wallet to user_wallets table (upsert by user_email)
-            if (user_email && wallet_address) {
-              try {
-                const { error: walletUpsertError, data: walletUpsertData } = await supabase
-                  .from("user_wallets")
-                  .upsert([
-                    {
-                      user_email,
-                      wallet_address,
-                      created_at: new Date().toISOString(),
-                    }
-                  ], { onConflict: ["user_email"] });
-                if (walletUpsertError) {
-                  console.error("[WalletGen] ⚠️ Failed to upsert user_wallets:", walletUpsertError.message, walletUpsertError);
-                } else {
-                  console.log("[WalletGen] Wallet upserted to user_wallets:", walletUpsertData);
-                }
-              } catch (upsertCatchErr) {
-                console.error("[WalletGen] Exception during wallet upsert:", upsertCatchErr);
-              }
-            }
-            // --- Supra Move: Register wallet on-chain ---
-            try {
-              await registerUserOnChain(wallet_address, formData.get("referral_code") as string ?? "", Date.now());
-              console.log("[WalletGen] ✅ Wallet registered on-chain via Move");
-            } catch (err) {
-              console.error("[WalletGen] ⚠️ Failed to register wallet on-chain:", err);
-              // Optionally: continue, but log for admin review
-            }
-          }
-        }
-      } catch (e) {
-        console.error("[WalletGen] Wallet generation outer catch:", e);
-      }
-    }
 
     if (!file) {
       return NextResponse.json(
@@ -211,6 +140,54 @@ export async function POST(req: NextRequest) {
 
     // Generate file hash for fraud detection
     const fileHash = crypto.createHash('sha256').update(buffer).digest('hex');
+
+    // --- Look up wallet_address from user_wallets by user_id ---
+    // Multi-tenant wallet lookup: supports email, telegram_id, or existing wallet_address
+    if (!wallet_address) {
+      try {
+        let userId: string | null = null;
+
+        // Find user_id by email or telegram_id
+        if (user_email) {
+        const { data: userData } = await supabaseService
+          .from("users")
+          .select("id")
+          .eq("email", user_email)
+          .maybeSingle();          if (userData) {
+            userId = userData.id;
+          }
+        } else if (telegram_id) {
+          // Telegram user lookup
+          const { data: telegramUser } = await supabaseService
+            .from("users")
+            .select("id")
+            .eq("telegram_id", telegram_id)
+            .maybeSingle();
+          
+          if (telegramUser) {
+            userId = telegramUser.id;
+          }
+        }
+
+        // Look up multi-tenant wallet by user_id
+        if (userId) {
+          const { data: walletData } = await supabaseService
+            .from("user_wallets")
+            .select("wallet_address")
+            .eq("user_id", userId)
+            .maybeSingle();
+
+          if (walletData) {
+            wallet_address = walletData.wallet_address;
+            console.log("[Multi-Tenant Wallet] Retrieved wallet for user_id:", userId, "→", wallet_address);
+          } else {
+            console.warn("[Multi-Tenant Wallet] No wallet found for user_id:", userId, "- will be generated");
+          }
+        }
+      } catch (e) {
+        console.error("[Multi-Tenant Wallet] Failed to look up wallet:", e);
+      }
+    }
 
     // 1. Upload to Supabase Storage
     const filePath = `receipts/${Date.now()}-${file.name}`;
@@ -527,7 +504,7 @@ export async function POST(req: NextRequest) {
 
 
     // 6. Insert into Supabase with fraud detection data, boost info, and Telegram Stars multiplier info
-    const { data: insertData, error: insertError } = await supabase
+    const { data: insertData, error: insertError } = await supabaseService
       .from("receipts")
       .insert({
         brand,

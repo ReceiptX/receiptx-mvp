@@ -11,13 +11,26 @@ export default function CameraCapture({ onPhotoUpload }: { onPhotoUpload?: (data
   // Open camera
   const openCamera = async () => {
     setIsCameraOpen(true);
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" },
-      audio: false,
-    });
-    if (videoRef.current) {
-      videoRef.current.srcObject = stream;
-      videoRef.current.play();
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Camera not supported in this browser");
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+        audio: false,
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        try {
+          await videoRef.current.play();
+        } catch (e) {
+          // ignore play errors
+        }
+      }
+    } catch (err) {
+      console.error("openCamera error:", err);
+      setIsCameraOpen(false);
+      alert("Unable to open camera. Please use Upload if this persists.");
     }
   };
 
@@ -56,6 +69,27 @@ export default function CameraCapture({ onPhotoUpload }: { onPhotoUpload?: (data
           Open Camera
         </button>
       )}
+      {/* Fallback file input for environments that block camera (in-app browsers) */}
+      <label className="mt-2 inline-block">
+        <input
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files && e.target.files[0];
+            if (!f) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+              const result = reader.result as string;
+              setPhoto(result);
+              if (onPhotoUpload) onPhotoUpload(result);
+            };
+            reader.readAsDataURL(f);
+          }}
+        />
+        <span className="btn ml-2">Upload Photo</span>
+      </label>
       {isCameraOpen && !photo && (
         <>
           <video ref={videoRef} className="w-full rounded-xl" />

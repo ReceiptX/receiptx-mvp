@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseService } from "@/lib/supabaseServiceClient";
 import crypto from "crypto";
 
 export const runtime = "nodejs";
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if user already has a referral code
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseService
       .from("referrals")
       .select("referral_code")
       .or(`referrer_email.eq.${user_email || 'null'},referrer_telegram_id.eq.${telegram_id || 'null'},referrer_wallet_address.eq.${wallet_address}`)
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         referral_code: existing[0].referral_code,
-        referral_link: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/signup?ref=${existing[0].referral_code}`,
+        referral_link: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/landing?ref=${existing[0].referral_code}`,
         is_new: false
       });
     }
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     // If custom_code is provided, check for duplicates
     let referralCode = custom_code ? custom_code.trim().toUpperCase() : crypto.randomBytes(6).toString('hex').toUpperCase();
     if (custom_code) {
-      const { data: codeExists } = await supabase
+      const { data: codeExists } = await supabaseService
         .from("referrals")
         .select("referral_code")
         .eq("referral_code", referralCode)
@@ -55,10 +55,30 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Persist referral to users/referrals so the code is actually usable later
+    try {
+      // Upsert into `users` table so user's referral_code is available in user record
+      if (user_email && supabaseAdmin) {
+        await supabaseService
+          .from('users')
+          .upsert({ email: user_email, referral_code: referralCode }, { onConflict: ['email'] });
+      }
+
+      // Also create an active referrals row for lookup by code (helps track owners)
+      if (supabaseAdmin) {
+        await supabaseService
+          .from('referrals')
+          .upsert({ referral_code: referralCode, referrer_email: user_email || null, status: 'active' }, { onConflict: ['referral_code'] });
+      }
+    } catch (dbErr) {
+      console.error('Failed to persist referral_code:', dbErr);
+      // non-fatal: continue and return the code to the user
+    }
+
     return NextResponse.json({
       success: true,
       referral_code: referralCode,
-      referral_link: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/signup?ref=${referralCode}`,
+      referral_link: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/landing?ref=${referralCode}`,
       is_new: true,
       note: "Save this code and share it! Referrals will be tracked when they sign up."
     });
@@ -95,7 +115,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       referral_code: referralCode,
-      referral_link: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/signup?ref=${referralCode}`,
+      referral_link: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/landing?ref=${referralCode}`,
     });
 
   } catch (err: any) {

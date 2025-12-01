@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseService } from "@/lib/supabaseServiceClient";
 import { processImageOCR } from "@/lib/ocrService";
 
 export async function POST(request: Request) {
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   const merchant = merchantMatch ? merchantMatch[0].trim() : "Unknown";
   const total = totalMatch ? parseFloat(totalMatch[1]) : 0;
 
-  await supabase.from("receipts").insert([
+  await supabaseService.from("receipts").insert([
     {
       user_email: email,
       merchant,

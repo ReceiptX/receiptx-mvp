@@ -9,7 +9,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "reward-worker": "node scripts/run_reward_worker.js",
+    "db:migrate": "supabase db push",
+    "clear-ocr": "node scripts/clear_ocr_memory.js"
   },
   "dependencies": {
     "20": "^3.1.9",
@@ -35,8 +38,10 @@
     "@types/node": "^20.19.25",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "baseline-browser-mapping": "^2.8.32",
     "eslint": "^9",
     "eslint-config-next": "16.0.1",
+    "supabase": "^2.63.1",
     "tailwindcss": "^4.1.17",
     "ts-node": "^10.9.2",
     "typescript": "5.9.3"
