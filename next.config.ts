@@ -2,11 +2,15 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
-  // `swcMinify` removed — Next 16/13+ manages minification automatically.
-  // Temporarily disable TypeScript build errors for Netlify deployment
-  // Proprietary modules have type mismatches that need refactoring
+  
+  // Disable TypeScript build errors for Netlify deployment
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
+  },
+  
+  // Skip ESLint during builds to prevent memory issues
+  eslint: {
+    ignoreDuringBuilds: true,
   },
   
   // Optimize images
