@@ -7,12 +7,22 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "cross-env TURBOPACK=0 next build",
+    "build:turbo": "next build --turbo",
     "start": "next start",
     "lint": "eslint",
     "reward-worker": "node scripts/run_reward_worker.js",
     "db:migrate": "supabase db push",
-    "clear-ocr": "node scripts/clear_ocr_memory.js"
+    "clear-ocr": "node scripts/clear_ocr_memory.js",
+    "postinstall": "node scripts/postinstall.js"
+  },
+  "overrides": {
+    "thread-stream": {
+      "pino-elasticsearch": "npm:empty-module@^1.0.0",
+      "tap": "npm:empty-module@^1.0.0",
+      "desm": "npm:empty-module@^1.0.0",
+      "fastbench": "npm:empty-module@^1.0.0"
+    }
   },
   "dependencies": {
     "20": "^3.1.9",
@@ -39,8 +49,10 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "baseline-browser-mapping": "^2.8.32",
+    "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.0.1",
+    "null-loader": "^4.0.1",
     "supabase": "^2.63.1",
     "tailwindcss": "^4.1.17",
     "ts-node": "^10.9.2",

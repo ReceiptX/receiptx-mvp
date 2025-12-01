@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "npm ci && npm run build"
   publish = ".next"
 
 # Disable scanning entirely — safest and cleanest fix  
@@ -7,6 +7,7 @@
   NODE_VERSION = "20.18.0"
   NODE_OPTIONS = "--max_old_space_size=4096"
   SECRETS_SCAN_ENABLED = "false"
+  NPM_FLAGS = "--omit=optional"
 
 # Scheduled function to process rewards every 15 minutes
 [functions]
