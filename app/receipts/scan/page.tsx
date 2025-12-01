@@ -75,7 +75,16 @@ export default function ReceiptScanPage() {
           body: formData,
         });
 
+        if (!res.ok) {
+          throw new Error(`Server error: ${res.status} ${res.statusText}`);
+        }
+
         const data = await res.json();
+        
+        if (!data.success) {
+          throw new Error(data.error || 'Receipt processing failed');
+        }
+        
         setResult(data);
         return;
       }
@@ -88,7 +97,16 @@ export default function ReceiptScanPage() {
           body: JSON.stringify({ image: preview }),
         });
 
+        if (!res.ok) {
+          throw new Error(`Server error: ${res.status} ${res.statusText}`);
+        }
+
         const data = await res.json();
+        
+        if (!data.success) {
+          throw new Error(data.error || 'Receipt processing failed');
+        }
+        
         setResult(data);
         return;
       }
@@ -96,7 +114,15 @@ export default function ReceiptScanPage() {
       setError('No photo or file selected to submit.');
     } catch (err: any) {
       console.error('submitReceipt error', err);
-      setError(err?.message || 'Failed to submit receipt');
+      
+      // Provide more specific error messages
+      if (err.message === 'Failed to fetch' || err.message.includes('fetch failed')) {
+        setError('Unable to connect to server. Please check your internet connection and try again.');
+      } else if (err.message.includes('Server error')) {
+        setError(`Server error: ${err.message}. Please try again later.`);
+      } else {
+        setError(err?.message || 'Failed to submit receipt. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -228,12 +254,22 @@ export default function ReceiptScanPage() {
         </div>
       )}
 
-      {result && !result.reward && (
-        <div className="mt-6 bg-gray-800 p-4 rounded-lg">
+      {result && !result.reward && !result.success && (
+        <div className="mt-6 bg-yellow-900/20 border border-yellow-700 p-4 rounded-lg">
           <h2 className="text-xl font-semibold text-yellow-400 mb-2">⚠️ Processing Issue</h2>
-          <pre className="text-sm whitespace-pre-wrap text-gray-300">
-            {JSON.stringify(result, null, 2)}
-          </pre>
+          <p className="text-gray-300 mb-2">
+            {result.error || 'Receipt could not be processed. Please try again.'}
+          </p>
+          {result.error && (
+            <details className="mt-2">
+              <summary className="text-sm text-gray-400 cursor-pointer hover:text-gray-300">
+                Technical Details
+              </summary>
+              <pre className="mt-2 text-xs text-gray-400 whitespace-pre-wrap bg-gray-900 p-3 rounded">
+                {JSON.stringify(result, null, 2)}
+              </pre>
+            </details>
+          )}
         </div>
       )}
     </main>

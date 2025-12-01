@@ -69,16 +69,27 @@ export async function POST(req: NextRequest) {
 
     if (!existingWallet) {
       try {
+        console.log('🔑 Generating wallet for user_id:', userId);
+        
         // Derive wallet from user_id (deterministic)
         const entropy = deriveWalletEntropy(userId);
+        console.log('  ✓ Entropy derived');
+        
         const keypair = createSupraKeypairFromEntropy(entropy);
+        console.log('  ✓ Keypair created:', {
+          address: keypair.address,
+          hasPrivateKey: !!keypair.privateKey,
+          privateKeyLength: keypair.privateKey?.length
+        });
 
         // Encrypt private key using AES-256-GCM
         const encrypted = encryptPrivateKey(keypair.privateKey);
+        console.log('  ✓ Private key encrypted');
+        
         const encryptedPrivateKey = JSON.stringify(encrypted);
 
         // Store wallet with user_id foreign key
-        const { error: walletInsertError } = await supabaseService
+        const { data: walletData, error: walletInsertError } = await supabaseService
           .from('user_wallets')
           .insert({
             user_id: userId,
@@ -87,16 +98,38 @@ export async function POST(req: NextRequest) {
             encryption_method: 'AES-256-GCM',
             blockchain_network: 'supra_testnet',
             user_email: email,
-          });
+          })
+          .select('wallet_address')
+          .single();
 
         if (walletInsertError) {
-          console.error('Wallet insert error:', walletInsertError);
-          // Non-fatal - continue with rewards
+          console.error('❌ Wallet insert error:', walletInsertError);
+          // IMPORTANT: This should not be silently ignored
+          throw new Error(`Wallet creation failed: ${walletInsertError.message}`);
         }
-      } catch (walletError) {
-        console.error('Wallet generation failed:', walletError);
-        // Non-fatal - user created, continue
+        
+        console.log('✅ Wallet created successfully:', walletData.wallet_address);
+      } catch (walletError: any) {
+        console.error('❌ CRITICAL: Wallet generation failed:', walletError);
+        console.error('   Error details:', {
+          message: walletError.message,
+          stack: walletError.stack,
+          code: walletError.code
+        });
+        
+        // Return error instead of silently continuing
+        // This is critical - users need wallets to participate
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Wallet generation failed. Please contact support.',
+            details: walletError.message 
+          },
+          { status: 500 }
+        );
       }
+    } else {
+      console.log('ℹ️  Wallet already exists:', existingWallet.wallet_address);
     }
 
     // 4. Enqueue reward job for waitlist signup

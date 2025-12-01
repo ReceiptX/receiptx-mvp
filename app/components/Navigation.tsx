@@ -3,13 +3,16 @@
 import { usePrivy } from '@privy-io/react-auth';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 const isTestnet = process.env.NEXT_PUBLIC_NETWORK === 'testnet' || process.env.NODE_ENV !== 'production';
 
 export default function Navigation() {
   const { authenticated, login, logout } = usePrivy();
   const router = useRouter();
+  const pathname = usePathname();
+  
+  if (pathname.startsWith("/login")) return null;
 
   const handleLogout = async () => {
     await logout();
