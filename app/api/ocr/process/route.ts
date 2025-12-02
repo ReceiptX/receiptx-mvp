@@ -554,6 +554,54 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 6.5. Issue RWT/AIA rewards directly to transaction tables
+    try {
+      // Get user_id from the identifiers
+      let userId: string | null = null;
+      
+      if (user_email) {
+        const { data: userData } = await supabaseService
+          .from("users")
+          .select("id")
+          .eq("email", user_email)
+          .maybeSingle();
+        if (userData) userId = userData.id;
+      } else if (telegram_id) {
+        const { data: userData } = await supabaseService
+          .from("users")
+          .select("id")
+          .eq("telegram_id", telegram_id)
+          .maybeSingle();
+        if (userData) userId = userData.id;
+      } else if (wallet_address) {
+        const { data: walletData } = await supabaseService
+          .from("user_wallets")
+          .select("user_id")
+          .eq("wallet_address", wallet_address)
+          .maybeSingle();
+        if (walletData) userId = walletData.user_id;
+      }
+
+      if (userId) {
+        const { issueReceiptReward } = await import('@/lib/rewardsReceiptDirect');
+        await issueReceiptReward({
+          userId,
+          receiptId: insertData[0].id,
+          rwtAmount: totalRWT,
+          aiaAmount: 0, // Receipts don't earn AIA by default
+          brand,
+          multiplier,
+          baseRWT
+        });
+        console.log(`✅ Receipt rewards issued to transactions table: ${totalRWT} RWT`);
+      } else {
+        console.warn('⚠️ Could not find user_id for transaction - rewards logged to user_rewards only');
+      }
+    } catch (rewardErr: any) {
+      console.error('⚠️ Failed to issue receipt rewards:', rewardErr.message);
+      // Don't fail the whole request if reward transaction fails
+    }
+
     // 7. Update or create user_stats entry
     const { data: existingStats } = await supabase
       .from("user_stats")

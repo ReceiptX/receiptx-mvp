@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { verifyOcrSignature } from '@/lib/hmac';
 import { supabaseService } from '@/lib/supabaseServiceClient';
 import { rateLimit } from '@/lib/rateLimit';
-import { enqueueReferralRewards } from '@/lib/rewardsWaitlist';
+import { issueReferralReward } from '@/lib/rewardsWaitlistDirect';
 
 export const runtime = 'nodejs';
 
@@ -83,8 +83,14 @@ export async function POST(req: Request) {
   });
   if (logErr) console.error('Failed to insert OCR log', logErr);
 
-  // Enqueue referral reward if this was the referred user's first receipt
-  await enqueueReferralRewards(user_id, Boolean(has_multiplier));
+  // Issue referral reward directly if this was the referred user's first receipt
+  try {
+    await issueReferralReward(user_id, Boolean(has_multiplier));
+    console.log(`✅ Referral reward processed for user ${user_id}`);
+  } catch (refErr) {
+    console.error('⚠️ Failed to process referral reward:', refErr);
+    // Don't fail the webhook if referral processing fails
+  }
 
   return NextResponse.json({ ok: true }, { status: 200 });
 }
