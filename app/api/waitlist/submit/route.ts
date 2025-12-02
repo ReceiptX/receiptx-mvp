@@ -88,15 +88,13 @@ export async function POST(req: NextRequest) {
         
         const encryptedPrivateKey = JSON.stringify(encrypted);
 
-        // Store wallet with user_id foreign key
+        // Store wallet with user_id foreign key (using only columns that exist)
         const { data: walletData, error: walletInsertError } = await supabaseService
           .from('user_wallets')
           .insert({
             user_id: userId,
             wallet_address: keypair.address,
             encrypted_private_key: encryptedPrivateKey,
-            encryption_method: 'AES-256-GCM',
-            blockchain_network: 'supra_testnet',
             user_email: email,
           })
           .select('wallet_address')

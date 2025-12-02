@@ -78,15 +78,13 @@ export async function POST(req: NextRequest) {
       .eq('id', userId)
       .single();
 
-    // Insert wallet
+    // Insert wallet (using only columns that exist in the current schema)
     const { data: wallet, error: walletError } = await supabaseService
       .from('user_wallets')
       .insert({
         user_id: userId,
         wallet_address: keypair.address,
         encrypted_private_key: encryptedPrivateKey,
-        encryption_method: 'AES-256-GCM',
-        blockchain_network: 'supra_testnet',
         user_email: userData?.email || null,
       })
       .select('wallet_address')
