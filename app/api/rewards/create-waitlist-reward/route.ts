@@ -39,97 +39,56 @@ export async function POST(req: NextRequest) {
       userId = user.id;
     }
 
-    console.log('💰 Creating waitlist reward job for user_id:', userId);
+    console.log('💰 Issuing waitlist rewards for user_id:', userId);
 
-    // Check if job already exists
-    const { data: existingJob, error: checkError } = await supabaseService
-      .from('reward_jobs')
-      .select('id, status')
+    // Check if rewards already issued
+    const { data: existingRWT, error: checkError } = await supabaseService
+      .from('rwt_transactions')
+      .select('id')
       .eq('user_id', userId)
-      .eq('job_type', 'waitlist_signup')
+      .eq('source', 'waitlist_signup')
       .maybeSingle();
 
     if (checkError) {
-      console.error('Error checking existing jobs:', checkError);
+      console.error('Error checking existing rewards:', checkError);
       return NextResponse.json(
         { success: false, error: checkError.message },
         { status: 500 }
       );
     }
 
-    if (existingJob) {
+    if (existingRWT) {
       return NextResponse.json({
         success: true,
-        message: 'Reward job already exists',
-        job_id: existingJob.id,
-        status: existingJob.status,
+        message: 'Rewards already issued for this user',
+        already_issued: true,
       });
     }
 
-    // Create reward job
-    const { data: job, error: jobError } = await supabaseService
-      .from('reward_jobs')
-      .insert({
-        user_id: userId,
-        job_type: 'waitlist_signup',
-        payload: {},
-        status: 'pending',
-      })
-      .select('id')
-      .single();
-
-    if (jobError) {
-      console.error('Error creating reward job:', jobError);
-      return NextResponse.json(
-        { success: false, error: jobError.message },
-        { status: 500 }
-      );
-    }
-
-    console.log('✅ Reward job created:', job.id);
-
-    // Process the job immediately
-    const { processRewardJob } = await import('@/lib/rewardsWaitlist');
+    // Issue rewards directly
+    const { issueWaitlistSignupRewards } = await import('@/lib/rewardsWaitlistDirect');
     
     try {
-      await processRewardJob({
-        id: job.id,
-        user_id: userId,
-        job_type: 'waitlist_signup',
-        payload: {},
-      });
+      const result = await issueWaitlistSignupRewards(userId);
 
-      // Mark job as completed
-      await supabaseService
-        .from('reward_jobs')
-        .update({ status: 'completed', updated_at: new Date().toISOString() })
-        .eq('id', job.id);
+      if (!result.success) {
+        throw new Error(result.reason || 'Unknown error');
+      }
 
-      console.log('✅ Reward job processed successfully');
+      console.log('✅ Rewards issued successfully');
 
       return NextResponse.json({
         success: true,
-        message: 'Waitlist reward issued successfully',
-        job_id: job.id,
-        rewards: { rwt: 1000, aia: 5 },
+        message: 'Waitlist rewards issued successfully',
+        rewards: { rwt: result.rwt, aia: result.aia },
       });
     } catch (processError: any) {
-      console.error('Error processing reward job:', processError);
-
-      // Mark job as failed
-      await supabaseService
-        .from('reward_jobs')
-        .update({ 
-          status: 'failed', 
-          last_error: processError.message,
-          updated_at: new Date().toISOString() 
-        })
-        .eq('id', job.id);
+      console.error('Error issuing rewards:', processError);
 
       return NextResponse.json(
         { 
           success: false, 
-          error: 'Job created but processing failed',
+          error: 'Reward issuance failed',
           details: processError.message 
         },
         { status: 500 }

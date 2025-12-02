@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseService } from '@/lib/supabaseServiceClient';
-import { enqueueWaitlistSignupRewards } from '@/lib/rewardsWaitlist';
+import { issueWaitlistSignupRewards } from '@/lib/rewardsWaitlistDirect';
 import { deriveWalletEntropy, createSupraKeypairFromEntropy } from '@/lib/crypto/walletDerivation';
 import { encryptPrivateKey } from '@/lib/crypto/aesGcm';
 
@@ -130,28 +130,28 @@ export async function POST(req: NextRequest) {
       console.log('ℹ️  Wallet already exists:', existingWallet.wallet_address);
     }
 
-    // 4. Enqueue reward job for waitlist signup
+    // 4. Issue waitlist signup rewards immediately (1000 RWT + 5 AIA)
     try {
-      console.log('💰 Enqueueing waitlist signup rewards for user_id:', userId);
-      const { error: rewardError } = await enqueueWaitlistSignupRewards(userId, null);
+      console.log('💰 Issuing waitlist signup rewards for user_id:', userId);
+      const rewardResult = await issueWaitlistSignupRewards(userId);
       
-      if (rewardError) {
-        throw new Error(`Reward job creation failed: ${rewardError.message}`);
+      if (!rewardResult.success) {
+        throw new Error(`Reward issuance failed: ${rewardResult.reason || 'unknown'}`);
       }
       
-      console.log('✅ Reward job enqueued successfully');
+      console.log('✅ Rewards issued:', rewardResult);
     } catch (rewardError: any) {
-      console.error('❌ CRITICAL: Failed to enqueue waitlist reward:', rewardError);
+      console.error('❌ CRITICAL: Failed to issue waitlist rewards:', rewardError);
       console.error('   Error details:', {
         message: rewardError.message,
         code: rewardError.code
       });
       
-      // This is critical - without reward jobs, users won't get their 1000 RWT
+      // This is critical - users expect their 1000 RWT signup bonus
       return NextResponse.json(
         { 
           success: false, 
-          error: 'Reward system initialization failed. Please contact support.',
+          error: 'Reward issuance failed. Please contact support.',
           details: rewardError.message 
         },
         { status: 500 }
@@ -178,9 +178,9 @@ export async function POST(req: NextRequest) {
               referrer_code: referral_code,
             });
 
-          // Enqueue referral reward (5 or 10 AIA based on multiplier)
-          const { enqueueReferralRewards } = await import('@/lib/rewardsWaitlist');
-          await enqueueReferralRewards(referrer.id, false);
+          // Issue referral reward immediately (5 or 10 AIA based on multiplier)
+          const { issueReferralReward } = await import('@/lib/rewardsWaitlistDirect');
+          await issueReferralReward(referrer.id, false);
         }
       } catch (referralError) {
         console.error('Referral processing error:', referralError);
