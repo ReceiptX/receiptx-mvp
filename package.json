@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "cross-env TURBOPACK=0 next build",
+    "build": "next build",
     "build:turbo": "next build --turbo",
     "start": "next start",
     "lint": "eslint",

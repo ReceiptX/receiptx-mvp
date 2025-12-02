@@ -8,11 +8,6 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   
-  // Skip ESLint during builds to prevent memory issues
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  
   // Optimize images
   images: {
     remotePatterns: [
@@ -27,26 +22,37 @@ const nextConfig: NextConfig = {
     ],
   },
   
+  // Server external packages (moved from experimental in Next.js 16)
+  serverExternalPackages: [
+    '@reown/appkit',
+    '@reown/appkit-utils',
+    '@reown/appkit-controllers',
+    'thread-stream',
+    'pino',
+  ],
+  
   // Enable experimental features
   experimental: {
     serverActions: {
       allowedOrigins: ['localhost:3000'],
     },
-    // Exclude problematic packages from server-side bundling
-    serverComponentsExternalPackages: [
-      'thread-stream',
-      'pino',
-      'pino-pretty',
-      '@walletconnect/logger',
-    ],
   },
   
   // Webpack configuration to skip problematic files
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
+    // Ignore README and other non-code files from node_modules
     config.module.rules.push({
-      test: /LICENSE|\.md|thread-stream\/test|\/bench\.js$/,
-      use: 'null-loader',
+      test: /\.md$/,
+      type: 'asset/source',
     });
+    
+    // Ignore specific problematic files
+    config.resolve.alias = {
+      ...config.resolve.alias,
+    };
+    
+    // Don't try to parse README files as modules
+    config.module.noParse = /README\.md$/;
 
     return config;
   },
@@ -57,15 +63,20 @@ const nextConfig: NextConfig = {
   
   // Turbopack configuration (Next.js 16 default bundler)
   turbopack: {
-    // Turbopack doesn't support IgnorePlugin yet
-    // This acknowledges Turbopack is being used
+    resolveExtensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
   },
   
   // Transpile problematic packages
   transpilePackages: [
     '@privy-io/react-auth',
-    '@walletconnect/ethereum-provider',
   ],
+  
+  // Enable experimental features
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['localhost:3000'],
+    },
+  },
 };
 
 export default nextConfig;
