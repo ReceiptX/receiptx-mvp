@@ -14,12 +14,13 @@ export default function Home() {
     if (ready) setLoading(false);
   }, [ready]);
 
-  // Auto-redirect root '/'
+  // Auto-redirect root '/' - preserve query parameters like ?ref=CODE
   if (typeof window !== "undefined" && window.location.pathname === "/") {
+    const queryParams = window.location.search; // Preserve ?ref=CODE etc.
     if (authenticated) {
-      redirect("/dashboard");
+      redirect("/dashboard" + queryParams);
     } else {
-      redirect("/landing");
+      redirect("/landing" + queryParams);
     }
   }
 

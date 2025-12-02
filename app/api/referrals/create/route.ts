@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         referral_code: existing[0].referral_code,
-        referral_link: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/landing?ref=${existing[0].referral_code}`,
+        referral_link: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}?ref=${existing[0].referral_code}`,
         is_new: false
       });
     }
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       referral_code: referralCode,
-      referral_link: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/landing?ref=${referralCode}`,
+      referral_link: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}?ref=${referralCode}`,
       is_new: true,
       note: "Save this code and share it! Referrals will be tracked when they sign up."
     });
@@ -115,7 +115,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       referral_code: referralCode,
-      referral_link: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/landing?ref=${referralCode}`,
+      referral_link: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}?ref=${referralCode}`,
     });
 
   } catch (err: any) {
