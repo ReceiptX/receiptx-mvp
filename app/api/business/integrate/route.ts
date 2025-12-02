@@ -1,14 +1,17 @@
-// import { NextResponse } from "next/server";
-// Proprietary integrations are disabled for MVP/Netlify build
-// let ReceiptXBusinessAPI: any = null;
-// let Web2Web3Bridge: any = null;
-// let TokenDistributor: any = null;
-// let api: any = null;
-// let bridge: any = null;
-// let distributor: any = null;
-// async function initProprietaryModules() {
-//   return false;
-// }
+import { NextResponse } from "next/server";
+
+// Proprietary integrations are disabled for this deployment target.
+let api: any = null;
+let bridge: any = null;
+let distributor: any = null;
+
+async function initProprietaryModules() {
+  // Stub ensures TypeScript is satisfied while keeping deployment safe.
+  api = null;
+  bridge = null;
+  distributor = null;
+  return false;
+}
 
 export async function POST(req: Request) {
   try {
