@@ -134,10 +134,30 @@ export async function POST(req: NextRequest) {
 
     // 4. Enqueue reward job for waitlist signup
     try {
-      await enqueueWaitlistSignupRewards(userId, null);
-    } catch (rewardError) {
-      console.error('Failed to enqueue waitlist reward:', rewardError);
-      // Non-fatal - log but don't fail the request
+      console.log('💰 Enqueueing waitlist signup rewards for user_id:', userId);
+      const { error: rewardError } = await enqueueWaitlistSignupRewards(userId, null);
+      
+      if (rewardError) {
+        throw new Error(`Reward job creation failed: ${rewardError.message}`);
+      }
+      
+      console.log('✅ Reward job enqueued successfully');
+    } catch (rewardError: any) {
+      console.error('❌ CRITICAL: Failed to enqueue waitlist reward:', rewardError);
+      console.error('   Error details:', {
+        message: rewardError.message,
+        code: rewardError.code
+      });
+      
+      // This is critical - without reward jobs, users won't get their 1000 RWT
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Reward system initialization failed. Please contact support.',
+          details: rewardError.message 
+        },
+        { status: 500 }
+      );
     }
 
     // 5. Handle referral if provided
