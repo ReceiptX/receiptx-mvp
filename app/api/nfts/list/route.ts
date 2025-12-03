@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabaseClient";
 
 // GET: List user's NFTs
 export async function GET(request: NextRequest) {
@@ -17,8 +17,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Build query
-    let query = supabase
+    const client = supabaseAdmin;
+    if (!client) {
+      console.error("Supabase service role client unavailable in nfts/list");
+      return NextResponse.json({ error: "Service configuration error" }, { status: 500 });
+    }
+
+    // Build query using service-role client for privileged access to NFT catalog joins
+    let query = client
       .from("user_nfts")
       .select(`
         *,
@@ -27,9 +33,9 @@ export async function GET(request: NextRequest) {
       .eq("status", status)
       .order("created_at", { ascending: false });
 
-    if (email) query = query.eq("user_email", email);
-    else if (telegram_id) query = query.eq("telegram_id", telegram_id);
-    else query = query.eq("wallet_address", wallet_address);
+    if (email) query = query.eq("user_email", email as string);
+    else if (telegram_id) query = query.eq("telegram_id", telegram_id as string);
+    else query = query.eq("wallet_address", wallet_address as string);
 
     const { data: nfts, error } = await query;
 

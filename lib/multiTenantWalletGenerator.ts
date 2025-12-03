@@ -2,6 +2,8 @@
 /// Solves: Licensing liability - each tenant controls their own wallets
 /// ReceiptX is NOT custodian of licensee wallets
 
+import CryptoJS from "crypto-js";
+
 interface TenantConfig {
   tenant_id: string;                    // Unique identifier (e.g., "starbucks", "mcdonalds")
   tenant_salt: string;                  // Tenant-controlled secret (they manage, not you)
@@ -12,6 +14,7 @@ interface TenantConfig {
 interface UserContext {
   email?: string;
   telegram_id?: string;
+  user_id?: string;
   tenant_id: string;                    // NEW: Which tenant owns this user?
   biometrics?: any;
   [key: string]: any;
@@ -54,7 +57,7 @@ export class MultiTenantWalletGenerator {
     const wallet = await this.createWalletInstance(privateKey);
     
     // Store with tenant ownership metadata
-    await this.storeWalletSecurely(wallet, userContext, tenantConfig.tenant_id);
+    await this.storeWalletSecurely(wallet, userContext, tenantConfig);
     
     return {
       ...wallet,
@@ -125,23 +128,72 @@ export class MultiTenantWalletGenerator {
   private async storeWalletSecurely(
     wallet: WalletInstance,
     userContext: UserContext,
-    tenantId: string
+    tenantConfig: TenantConfig
   ): Promise<void> {
-    const { createClient } = await import("@supabase/supabase-js");
     // Use supabaseAdmin from server/supabaseAdmin
     const { supabaseAdmin } = require('../server/supabaseAdmin');
     const supabase = supabaseAdmin;
-    
+
+    const tenantSalt = tenantConfig.tenant_salt || process.env.RECEIPTX_TENANT_SALT;
+    const tenantPepper = tenantConfig.tenant_pepper || process.env.RECEIPTX_TENANT_PEPPER;
+
+    if (!tenantSalt || !tenantPepper) {
+      throw new Error(`Missing tenant salt/pepper for ${tenantConfig.tenant_id}`);
+    }
+
+    // Resolve user_id if not provided
+    let userId = userContext.user_id || null;
+
+    try {
+      if (!userId && userContext.email) {
+        const { data } = await supabase
+          .from('users')
+          .select('id')
+          .eq('email', userContext.email)
+          .maybeSingle();
+        if (data?.id) {
+          userId = data.id;
+        }
+      }
+
+      if (!userId && userContext.telegram_id) {
+        const { data } = await supabase
+          .from('users')
+          .select('id')
+          .eq('telegram_id', userContext.telegram_id)
+          .maybeSingle();
+        if (data?.id) {
+          userId = data.id;
+        }
+      }
+    } catch (err) {
+      console.error('Failed to resolve user_id for wallet storage:', err);
+    }
+
+    if (!userId) {
+      throw new Error('User id required to store wallet. Please create the user before generating a wallet.');
+    }
+
+    const identifier = userContext.email || userContext.telegram_id || wallet.address;
+    const passphrase = `${tenantSalt}${identifier}${tenantPepper}`;
+    const encryptedPrivateKey = CryptoJS.AES.encrypt(wallet.privateKey, passphrase).toString();
+
     // Store with tenant ownership
-    await supabase.from("user_wallets").insert({
+    const { error } = await supabase.from("user_wallets").insert({
+      user_id: userId,
       user_email: userContext.email,
       telegram_id: userContext.telegram_id,
-      tenant_id: tenantId,                    // NEW: Track which tenant owns this
+      tenant_id: tenantConfig.tenant_id,
       wallet_address: wallet.address,
-      encrypted_private_key: wallet.privateKey, // TODO: Encrypt with tenant's key
+      encrypted_private_key: encryptedPrivateKey,
+      created_by: userContext.email || userContext.telegram_id || tenantConfig.tenant_id,
       blockchain_network: "supra_testnet",
       created_at: new Date().toISOString(),
     });
+
+    if (error) {
+      throw new Error(`Failed to persist wallet: ${error.message}`);
+    }
   }
 }
 

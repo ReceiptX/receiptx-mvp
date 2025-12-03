@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabaseClient";
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,8 +16,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Build query conditions
-    let query = supabase
+    const client = supabaseAdmin;
+    if (!client) {
+      console.error("Supabase service role client unavailable in receipts/history");
+      return NextResponse.json({ error: "Service configuration error" }, { status: 500 });
+    }
+
+    // Build query conditions with service-role client to bypass RLS for server reads
+    let query = client
       .from("receipts")
       .select("*")
       .order("created_at", { ascending: false })

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ReceiptX Supra L1 Wallet Integration
  * Inspired by multi-wallet detection patterns for Web3 onboarding

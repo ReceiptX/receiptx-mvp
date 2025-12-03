@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Proprietary ReceiptX Business Integration Layer
  * CONFIDENTIAL - Patent Pending

@@ -25,13 +25,6 @@ export default function ReceiptScanPage() {
   };
 
 
-  // Only auto-open file picker if not using camera
-  useEffect(() => {
-    if (ready && authenticated && inputRef.current && !file && !preview) {
-      inputRef.current.click();
-    }
-  }, [ready, authenticated, file, preview]);
-
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
   const ALLOWED_TYPES = [
     'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'application/pdf'
@@ -136,7 +129,7 @@ export default function ReceiptScanPage() {
         alt="ReceiptX Logo"
         width={240}
         height={60}
-        className="w-60 max-w-xs h-auto mb-6 drop-shadow-xl object-contain"
+        className="w-60 max-w-xl h-auto mb-6 drop-shadow-xl object-contain"
         priority
       />
       <h1 className="text-3xl font-extrabold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent mb-4 text-center drop-shadow">Scan Your Receipt</h1>
@@ -148,8 +141,20 @@ export default function ReceiptScanPage() {
 
       {/* Camera/photo upload UI */}
       {!preview && (
-        <div className="w-full max-w-xs mb-6">
-          <CameraCapture onPhotoUpload={handleCameraPhoto} />
+        <div className="w-full max-w-xl mb-6">
+          <div className="p-5 rounded-3xl bg-gradient-to-r from-emerald-500 via-cyan-500 to-blue-600 shadow-[0_20px_60px_-20px_rgba(0,255,200,0.6)] border border-white/15">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div>
+                <p className="text-sm uppercase tracking-[0.2em] text-white/80">Recommended</p>
+                <h2 className="text-2xl font-black text-white drop-shadow">Open Camera</h2>
+                <p className="text-white/80 text-sm">Tap to snap a photo and auto-fill your receipt.</p>
+              </div>
+              <span className="text-4xl">📷</span>
+            </div>
+            <div className="rounded-2xl bg-black/15 border border-white/10 overflow-hidden">
+              <CameraCapture onPhotoUpload={handleCameraPhoto} />
+            </div>
+          </div>
         </div>
       )}
 
@@ -158,7 +163,7 @@ export default function ReceiptScanPage() {
         <>
           <button
             onClick={() => inputRef.current?.click()}
-            className="w-full max-w-xs px-8 py-6 rounded-2xl bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 hover:from-cyan-300 hover:to-purple-600 text-white text-2xl font-bold shadow-2xl flex flex-col items-center gap-2 mb-6 transition border-2 border-cyan-300/40 min-h-20"
+            className="w-full max-w-xl px-8 py-6 rounded-2xl bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 hover:from-cyan-300 hover:to-purple-600 text-white text-2xl font-bold shadow-2xl flex flex-col items-center gap-2 mb-6 transition border-2 border-cyan-300/40 min-h-20"
           >
             <span className="text-4xl drop-shadow">📁</span>
             <span>Upload from Device</span>
@@ -176,7 +181,7 @@ export default function ReceiptScanPage() {
 
       {/* Preview and retake/clear option */}
       {preview && (
-        <div className="w-full max-w-xs flex flex-col items-center mb-6">
+        <div className="w-full max-w-xl flex flex-col items-center mb-6">
           <img
             src={preview}
             alt="Receipt preview"
@@ -197,14 +202,14 @@ export default function ReceiptScanPage() {
       <button
         onClick={submitReceipt}
         disabled={loading || !file}
-        className="w-full max-w-xs px-6 py-4 rounded-xl bg-gradient-to-r from-green-400 via-emerald-500 to-teal-500 hover:from-green-300 hover:to-teal-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-xl font-bold shadow-xl mb-2 border-2 border-green-300/40"
+        className="w-full max-w-xl px-6 py-4 rounded-xl bg-gradient-to-r from-green-400 via-emerald-500 to-teal-500 hover:from-green-300 hover:to-teal-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-xl font-bold shadow-xl mb-2 border-2 border-green-300/40"
       >
         {loading ? 'Processing...' : 'Submit Receipt'}
       </button>
 
       {/* Results */}
       {error && (
-        <div className="mt-4 bg-gradient-to-r from-red-900/80 to-pink-900/60 border border-red-500 text-red-100 p-4 rounded-lg max-w-xs text-center shadow">
+        <div className="mt-4 bg-gradient-to-r from-red-900/80 to-pink-900/60 border border-red-500 text-red-100 p-4 rounded-lg max-w-xl text-center shadow">
           <p>{error}</p>
         </div>
       )}

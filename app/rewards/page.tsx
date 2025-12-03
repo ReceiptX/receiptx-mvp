@@ -87,7 +87,8 @@ export default function RewardsMarketplace() {
       const res = await fetch(`/api/rewards/balance?${params}`);
       const data = await res.json();
       if (data.success) {
-        setRwtBalance(data.balance.rwt || 0);
+        const rwt = data.balance?.rwt ?? data.rwtBalance ?? 0;
+        setRwtBalance(rwt);
       }
     } catch (error) {
       console.error('Error fetching balance:', error);
@@ -143,18 +144,18 @@ export default function RewardsMarketplace() {
   const displayRewards = selectedCategory || searchQuery ? rewards : rewards.filter(r => !r.featured);
 
   return (
-    <main className="min-h-screen bg-rxBg text-rxText p-6">
-      <div className="max-w-7xl mx-auto">
+    <main className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-6">
+      <div className="max-w-7xl mx-auto text-white">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-cyan-400 mb-2">Rewards Marketplace</h1>
-            <p className="text-gray-400">Redeem your RWT tokens for exclusive rewards</p>
+            <h1 className="text-4xl font-bold mb-2">Rewards Marketplace</h1>
+            <p className="text-gray-300">Redeem your RWT tokens for exclusive rewards</p>
           </div>
           <div className="text-right">
-            <div className="text-sm text-gray-400">Your Balance</div>
+            <div className="text-sm text-gray-300">Your Balance</div>
             <div className="text-3xl font-bold text-cyan-400">{rwtBalance.toLocaleString()} RWT</div>
-            <Link href="/rewards/my-redemptions" className="text-sm text-cyan-400 hover:underline">
+            <Link href="/rewards/my-redemptions" className="text-sm text-cyan-300 hover:text-cyan-200">
               View My Rewards →
             </Link>
           </div>
@@ -168,7 +169,7 @@ export default function RewardsMarketplace() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && fetchRewards()}
-            className="w-full px-6 py-3 bg-rxCard border border-rxBlue/30 rounded-lg text-rxText placeholder-gray-500 focus:outline-none focus:border-rxBlue"
+            className="w-full px-6 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-cyan-400"
           />
         </div>
 
@@ -179,7 +180,7 @@ export default function RewardsMarketplace() {
             className={`px-6 py-2 rounded-full whitespace-nowrap transition ${
               selectedCategory === null
                 ? 'bg-cyan-400 text-black font-semibold'
-                : 'bg-rxCard text-gray-400 hover:bg-rxPurple/30'
+                : 'bg-white/10 text-gray-300 hover:bg-white/20'
             }`}
           >
             All Rewards
@@ -191,7 +192,7 @@ export default function RewardsMarketplace() {
               className={`px-6 py-2 rounded-full whitespace-nowrap transition ${
                 selectedCategory === cat.id
                   ? 'bg-cyan-400 text-black font-semibold'
-                  : 'bg-rxCard text-gray-400 hover:bg-rxPurple/30'
+                  : 'bg-white/10 text-gray-300 hover:bg-white/20'
               }`}
             >
               {cat.icon} {cat.name}
@@ -202,7 +203,7 @@ export default function RewardsMarketplace() {
         {/* Featured Rewards */}
         {!selectedCategory && !searchQuery && featuredRewards.length > 0 && (
           <div className="mb-12">
-            <h2 className="text-2xl font-bold mb-4">⭐ Featured Rewards</h2>
+            <h2 className="text-2xl font-bold mb-4 text-white">⭐ Featured Rewards</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {featuredRewards.map((reward) => (
                 <RewardCard
@@ -219,13 +220,13 @@ export default function RewardsMarketplace() {
 
         {/* All Rewards */}
         <div>
-          <h2 className="text-2xl font-bold mb-4">
+          <h2 className="text-2xl font-bold mb-4 text-white">
             {selectedCategory ? categories.find(c => c.id === selectedCategory)?.name : 'All Rewards'}
           </h2>
           {loading ? (
-            <p className="text-gray-400">Loading rewards...</p>
+            <p className="text-gray-300">Loading rewards...</p>
           ) : displayRewards.length === 0 ? (
-            <p className="text-gray-400">No rewards found</p>
+            <p className="text-gray-300">No rewards found</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayRewards.map((reward) => (
@@ -260,7 +261,7 @@ function RewardCard({
   const isAvailable = reward.available;
 
   return (
-    <div className="bg-rxCard rounded-2xl p-6 border border-rxBlue/20 hover:border-rxBlue/50 transition">
+    <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:border-cyan-400/60 transition">
       {/* Business Logo/Name */}
       <div className="flex items-center gap-3 mb-3">
         {reward.business_logo_url ? (
@@ -271,20 +272,20 @@ function RewardCard({
           </div>
         )}
         <div>
-          <div className="text-sm text-gray-400">{reward.business_name}</div>
-          {reward.featured && <span className="text-xs text-yellow-400">⭐ Featured</span>}
+          <div className="text-sm text-gray-300">{reward.business_name}</div>
+          {reward.featured && <span className="text-xs text-yellow-300">⭐ Featured</span>}
         </div>
       </div>
 
       {/* Title & Description */}
-      <h3 className="text-xl font-semibold mb-2">{reward.title}</h3>
-      <p className="text-gray-400 text-sm mb-4 line-clamp-2">{reward.description}</p>
+      <h3 className="text-xl font-semibold mb-2 text-white">{reward.title}</h3>
+      <p className="text-gray-300 text-sm mb-4 line-clamp-2">{reward.description}</p>
 
       {/* Value & Cost */}
       <div className="flex justify-between items-center mb-4">
         {reward.original_value && (
           <div className="text-sm">
-            <span className="text-gray-400">Value:</span>{' '}
+            <span className="text-gray-300">Value:</span>{' '}
             <span className="text-green-400 font-semibold">${reward.original_value}</span>
           </div>
         )}
@@ -294,7 +295,7 @@ function RewardCard({
       </div>
 
       {/* Stock & Expiry */}
-      <div className="flex justify-between text-xs text-gray-500 mb-4">
+      <div className="flex justify-between text-xs text-gray-400 mb-4">
         {reward.stock_remaining !== null && (
           <span>{reward.stock_remaining} left</span>
         )}
@@ -309,12 +310,12 @@ function RewardCard({
         disabled={!isAvailable || !canAfford || redeeming}
         className={`w-full py-3 rounded-lg font-semibold transition ${
           !isAvailable
-            ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+            ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
             : !canAfford
-            ? 'bg-red-900/30 text-red-400 cursor-not-allowed'
+            ? 'bg-red-900/40 text-red-300 cursor-not-allowed'
             : redeeming
-            ? 'bg-cyan-400/50 text-white cursor-wait'
-            : 'bg-cyan-400 text-black hover:bg-cyan-300'
+            ? 'bg-cyan-400/60 text-white cursor-wait'
+            : 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700'
         }`}
       >
         {!isAvailable

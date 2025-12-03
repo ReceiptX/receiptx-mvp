@@ -1,5 +1,63 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV !== 'production';
+
+const scriptSrc = [
+  "'self'",
+  'https://auth.privy.io',
+  'https://app.privy.io',
+  'https://*.privy.io',
+];
+if (isDev) {
+  scriptSrc.push("'unsafe-inline'", "'unsafe-eval'", 'blob:');
+}
+
+const connectSrc = [
+  "'self'",
+  'https://*.supabase.co',
+  'wss://*.supabase.co',
+  'https://auth.privy.io',
+  'https://api.privy.io',
+  'https://api.ocr.space',
+  'https://*.walletconnect.com',
+];
+if (isDev) {
+  connectSrc.push('ws://localhost:3000', 'ws://127.0.0.1:3000');
+}
+
+const csp = [
+  "default-src 'self';",
+  `script-src ${scriptSrc.join(' ')};`,
+  `connect-src ${connectSrc.join(' ')};`,
+  "img-src 'self' data: blob: https://*.supabase.co https://images.privy.io;",
+  "style-src 'self' 'unsafe-inline';",
+  "font-src 'self' data:;",
+  "frame-src https://auth.privy.io https://app.privy.io https://*.privy.io;",
+  "base-uri 'self';",
+  "form-action 'self';",
+  "object-src 'none';",
+  "upgrade-insecure-requests;",
+].join(' ');
+
+const securityHeaders = [
+  {
+    key: 'Content-Security-Policy',
+    value: csp,
+  },
+  {
+    key: 'Permissions-Policy',
+    value: 'camera=(self), microphone=(), geolocation=(self)',
+  },
+  {
+    key: 'Cross-Origin-Opener-Policy',
+    value: 'same-origin-allow-popups',
+  },
+  {
+    key: 'Cross-Origin-Embedder-Policy',
+    value: 'require-corp',
+  },
+];
+
 const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
   
@@ -70,13 +128,16 @@ const nextConfig: NextConfig = {
   transpilePackages: [
     '@privy-io/react-auth',
   ],
-  
-  // Enable experimental features
-  experimental: {
-    serverActions: {
-      allowedOrigins: ['localhost:3000'],
-    },
+
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: securityHeaders,
+      },
+    ];
   },
+  
 };
 
 export default nextConfig;

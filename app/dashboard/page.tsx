@@ -353,9 +353,17 @@ export default function DashboardPage() {
           <h2 className="text-2xl font-bold text-white mb-4">Recent Receipts</h2>
           
           {stats?.recentReceipts.length === 0 ? (
-            <p className="text-gray-400 text-center py-8">
-              No receipts yet. Scan your first receipt to start earning rewards!
-            </p>
+            <div className="text-center py-8">
+              <p className="text-gray-400 mb-4">
+                No receipts yet. Scan your first receipt to start earning rewards!
+              </p>
+              <button
+                onClick={() => router.push("/receipts/scan")}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition"
+              >
+                Scan Receipt
+              </button>
+            </div>
           ) : (
             <div className="space-y-3">
               {stats?.recentReceipts.map((receipt) => (

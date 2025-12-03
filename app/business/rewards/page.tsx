@@ -227,6 +227,7 @@ export default function BusinessRewardsPortal() {
                   onChange={(e) => setFormData({ ...formData, business_email: e.target.value })}
                   className="w-full px-4 py-2 bg-[#0B0C10] border border-cyan-400/30 rounded-lg text-white"
                   placeholder="Enter business email"
+                  autoComplete="email"
                 />
               </div>
 

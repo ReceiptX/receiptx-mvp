@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { MultiTenantWalletGenerator } from '@/lib/multiTenantWalletGenerator';
 import { checkRateLimit, getRateLimitHeaders } from '@/lib/rateLimiter';

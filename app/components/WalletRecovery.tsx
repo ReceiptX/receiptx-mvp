@@ -43,7 +43,7 @@ export function WalletRecovery() {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-xs mx-auto p-4 bg-white/10 rounded-xl mt-8">
       <h2 className="text-lg font-bold mb-2">Recover Your Wallet</h2>
       <label className="font-semibold">Email</label>
-      <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="px-3 py-2 rounded" required placeholder="Enter your email" />
+      <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="px-3 py-2 rounded" required placeholder="Enter your email" autoComplete="email" />
       <div className="flex gap-4 mb-2">
         <label>
           <input type="radio" checked={method === 'password'} onChange={() => setMethod('password')} /> Password
@@ -55,7 +55,7 @@ export function WalletRecovery() {
       {method === 'password' ? (
         <>
           <label className="font-semibold">Password</label>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="px-3 py-2 rounded" required placeholder="Enter your password" />
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="px-3 py-2 rounded" required placeholder="Enter your password" autoComplete="current-password" />
         </>
       ) : (
         <>

@@ -81,6 +81,10 @@ export const runtime = "nodejs";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'application/pdf'];
+// --- Plinko integration variables ---
+let reqPlinkoResult: any = null;
+let reqPlinkoHash: string | null = null;
+let reqLotteryResult: any = null;
 
 export async function POST(req: NextRequest) {
   // Load blockchain integration at runtime only
@@ -102,12 +106,52 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const formData = await req.formData();
-    const file = formData.get("file") as File;
-    const telegram_id = formData.get("telegram_id") as string;
-    const user_email = formData.get("user_email") as string;
-    const password = formData.get("password") as string;
-    let wallet_address = formData.get("wallet_address") as string;
+    const contentType = req.headers.get('content-type') || '';
+    let file: File | null = null;
+    let formData: FormData | null = null;
+    let jsonBody: Record<string, unknown> | null = null;
+
+    if (contentType.includes('application/json')) {
+      jsonBody = await req.json();
+      const dataUrl = typeof jsonBody.image === 'string' ? jsonBody.image : undefined;
+      if (!dataUrl?.startsWith('data:')) {
+        return NextResponse.json(
+          { success: false, error: 'No image provided' },
+          { status: 400, headers: getRateLimitHeaders(rateLimit) }
+        );
+      }
+
+      const [meta, b64] = dataUrl.split(',');
+      const mimeMatch = meta.match(/data:(.*);base64/);
+      const mime = mimeMatch?.[1] || 'image/png';
+      const buffer = Buffer.from(b64, 'base64');
+      const extension = mime.split('/')[1] || 'png';
+      file = new File([buffer], `camera-upload.${extension}`, { type: mime });
+    } else {
+      formData = await req.formData();
+      file = formData.get('file') as File | null;
+    }
+
+    const getField = (key: string): string | null => {
+      if (jsonBody) {
+        const value = jsonBody[key];
+        if (value === undefined || value === null) {
+          return null;
+        }
+        return typeof value === 'string' ? value : String(value);
+      }
+
+      const value = formData?.get(key);
+      if (typeof value === 'string') {
+        return value;
+      }
+      return value !== null && value !== undefined ? String(value) : null;
+    };
+
+    const telegram_id = getField('telegram_id') || undefined;
+    const user_email = getField('user_email') || undefined;
+    const password = getField('password') || undefined;
+    let wallet_address = getField('wallet_address') || undefined;
 
     if (!file) {
       return NextResponse.json(
@@ -140,6 +184,7 @@ export async function POST(req: NextRequest) {
 
     // Generate file hash for fraud detection
     const fileHash = crypto.createHash('sha256').update(buffer).digest('hex');
+    const imageHash = fileHash;
 
     // --- Look up wallet_address from user_wallets by user_id ---
     // Multi-tenant wallet lookup: supports email, telegram_id, or existing wallet_address
@@ -208,7 +253,7 @@ export async function POST(req: NextRequest) {
 
 
     let rawText = "";
-    let ocrResult = { text: "", confidence: 0.9 };
+    let ocrResult: { text: string; confidence?: number } = { text: "", confidence: 0.9 };
     if (file.type === 'application/pdf') {
       // PDF: extract text using pdf-parse (must be installed)
       try {
@@ -257,7 +302,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log("📄 OCR/PDF Text extracted:", rawText.slice(0, 200));
+    console.log("OCR/PDF Text extracted:", rawText.slice(0, 200));
 
     // 3. Extract non-personal data
     // Look for common receipt total patterns (supports both US and European formats)
@@ -325,10 +370,6 @@ export async function POST(req: NextRequest) {
       } else {
         console.log(`⚠️ Duplicate lottery ticket detected - Plinko not triggered`);
       }
-    // --- Plinko integration variables ---
-    let reqPlinkoResult: any = null;
-    let reqPlinkoHash: string | null = null;
-    let reqLotteryResult: any = null;
     }
 
     const brand = detectBrand(rawText); // custom logic below
@@ -603,7 +644,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 7. Update or create user_stats entry
-    const { data: existingStats } = await supabase
+    const { data: existingStats } = await supabaseService
       .from("user_stats")
       .select("*")
       .or(`user_email.eq.${user_email || 'null'},telegram_id.eq.${telegram_id || 'null'},wallet_address.eq.${wallet_address}`)
@@ -611,7 +652,7 @@ export async function POST(req: NextRequest) {
 
     if (existingStats) {
       // Update existing stats
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabaseService
         .from("user_stats")
         .update({
           total_receipts: existingStats.total_receipts + 1,
@@ -628,7 +669,7 @@ export async function POST(req: NextRequest) {
       }
     } else {
       // Create new stats entry
-      const { error: insertError } = await supabase
+      const { error: insertError } = await supabaseService
         .from("user_stats")
         .insert({
           user_email,
@@ -648,7 +689,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 7b. Also log to user_rewards table for transaction history
-    const { data: rewardData, error: rewardError } = await supabase
+    const { data: rewardData, error: rewardError } = await supabaseService
       .from("user_rewards")
       .insert({
         user_email,
@@ -919,3 +960,4 @@ function brandMultiplier(brand: string): number {
   const brandKey = detectBrandFromText(brand);
   return getBrandMultiplier(brandKey);
 }
+

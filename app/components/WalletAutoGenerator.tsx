@@ -90,6 +90,7 @@ export function WalletAutoGenerator() {
             required
             placeholder="Enter your password"
             title="Wallet password"
+            autoComplete="new-password"
           />
         </>
       ) : (
@@ -103,6 +104,7 @@ export function WalletAutoGenerator() {
             required
             placeholder="Enter 2FA code"
             title="2FA code from your authenticator app"
+            autoComplete="one-time-code"
           />
         </>
       )}

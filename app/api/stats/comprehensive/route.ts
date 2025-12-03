@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabaseClient";
 
 export async function GET(request: NextRequest) {
+  console.log("[/api/stats/comprehensive] invoked");
   try {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get("user_email") || searchParams.get("email");
@@ -15,19 +16,26 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Call the comprehensive stats function
-    const { data, error } = await supabase.rpc("get_user_comprehensive_stats", {
-      p_user_email: email,
-      p_telegram_id: telegram_id,
-      p_wallet_address: wallet_address
-    });
+    const client = supabaseAdmin;
+    if (!client) {
+      console.error("Supabase service role client unavailable in stats/comprehensive");
+      return NextResponse.json({ error: "Service configuration error" }, { status: 500 });
+    }
+
+    // Call the comprehensive stats function with service role to access cross-tenant data safely
+    const { data, error } = await client.rpc("get_user_comprehensive_stats" as any, {
+      p_user_email: email || null,
+      p_telegram_id: telegram_id || null,
+      p_wallet_address: wallet_address || null
+    } as any);
 
     if (error) {
       console.error("Error fetching comprehensive stats:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const stats = data && data.length > 0 ? data[0] : {
+    const rows: any[] = Array.isArray(data) ? data : [];
+    const stats = rows.length > 0 ? rows[0] : {
       total_receipts: 0,
       total_rwt_earned: 0,
       total_aia_earned: 0,

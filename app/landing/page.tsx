@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, useRef, FormEvent } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { WalletAutoGenerator } from "../components/WalletAutoGenerator";
@@ -32,6 +32,7 @@ export default function LandingPage() {
   const [customCodeSuccess, setCustomCodeSuccess] = useState(false);
   const [refParam, setRefParam] = useState<string | null>(null);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const uploadInputRef = useRef<HTMLInputElement | null>(null);
 
   const searchParams = useSearchParams();
 
@@ -39,6 +40,12 @@ export default function LandingPage() {
     const ref = searchParams?.get("ref");
     if (ref) setRefParam(ref);
   }, [searchParams]);
+
+  useEffect(() => {
+    if (uploadInputRef.current) {
+      uploadInputRef.current.setAttribute("capture", "environment");
+    }
+  }, []);
 
   async function handleWaitlist(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -117,6 +124,9 @@ export default function LandingPage() {
       setCustomCode("");
       setCustomCodeError(null);
       setCustomCodeSuccess(false);
+
+      // Navigate to dashboard after successful waitlist join
+      router.push("/dashboard");
     } else {
       console.error("Waitlist submission failed");
       alert("There was an error joining the waitlist. Please try again.");
@@ -180,6 +190,7 @@ export default function LandingPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={waitlistSuccess}
+            autoComplete="email"
           />
 
           <input
@@ -200,13 +211,13 @@ export default function LandingPage() {
             <input
               type="file"
               accept="image/*"
-              capture="environment"
               required={!receiptFile}
               className="w-full px-4 py-3 rounded-lg bg-[#232946] border border-cyan-700/30 text-white"
               onChange={e => setReceiptFile(e.target.files?.[0] || null)}
               disabled={waitlistSuccess}
               aria-label="Upload a photo of your receipt"
               title="Upload a photo of your receipt"
+              ref={uploadInputRef}
             />
             <span className="text-xs text-slate-400 text-center">or</span>
             <CameraCapture

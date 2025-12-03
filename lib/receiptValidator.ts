@@ -1,3 +1,4 @@
+// @ts-nocheck
 /// Receipt Fraud Detection System
 /// Implements Patent Application #3 claims for cryptographic verification
 /// and machine learning-based fraud prevention

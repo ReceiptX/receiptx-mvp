@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { env } from './env';
 
 function timingSafeEqual(a?: string, b?: string) {

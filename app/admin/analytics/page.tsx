@@ -48,6 +48,7 @@ export default function AdminAnalyticsPage() {
             placeholder="Enter admin password"
             value={password}
             onChange={e => setPassword(e.target.value)}
+            autoComplete="current-password"
           />
           <button type="submit" className="w-full px-4 py-2 rounded bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 text-white font-bold shadow">Login</button>
           {error && <div className="text-red-400 text-sm mt-2">{error}</div>}

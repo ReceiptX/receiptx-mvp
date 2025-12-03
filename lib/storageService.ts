@@ -1,9 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-// Use supabaseAdmin from server/supabaseAdmin
-const { supabaseAdmin } = require('../server/supabaseAdmin');
-  },
-});
+import { supabaseAdmin } from "@/server/supabaseAdmin";
 
 /**
  * Upload receipt image to Supabase Storage

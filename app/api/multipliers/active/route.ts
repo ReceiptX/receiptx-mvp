@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabaseClient";
 
 // GET /api/multipliers/active?user_email=...&telegram_id=...&wallet_address=...
 export async function GET(request: NextRequest) {
@@ -12,26 +12,47 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "User identifier required" }, { status: 400 });
   }
 
-  // Use the same logic as in reward patch: match any identifier
-  const userId = user_email || telegram_id || wallet_address;
-  if (!userId) {
+  const client = supabaseAdmin;
+  if (!client) {
+    console.error("Supabase service role client unavailable in multipliers/active");
+    return NextResponse.json({ error: "Service configuration error" }, { status: 500 });
+  }
+
+  const identifierFilters: string[] = [];
+  if (user_email) identifierFilters.push(`user_email.eq.${user_email}`);
+  if (telegram_id) identifierFilters.push(`telegram_id.eq.${telegram_id}`);
+  if (wallet_address) identifierFilters.push(`wallet_address.eq.${wallet_address}`);
+
+  if (!identifierFilters.length) {
     return NextResponse.json({ error: "No user identifier found" }, { status: 400 });
   }
 
-  // Query for active multiplier
-  const { data, error } = await supabase
+  let query = client
     .from("user_multipliers")
     .select("*")
     .eq("active", true)
-    .or(`user_id.eq.${userId}`)
-    .or("expires_at.is.null,expires_at.gt." + new Date().toISOString())
     .order("purchased_at", { ascending: false });
+
+  query = query.or(identifierFilters.join(','));
+
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  if (!data || data.length === 0) {
+  const multipliers = (data || []) as any[];
+
+  if (multipliers.length === 0) {
+    return NextResponse.json({ active: false });
+  }
+
+  const now = Date.now();
+  const usable = multipliers.filter(
+    (item) => !item.expires_at || new Date(item.expires_at as any).getTime() > now
+  );
+
+  if (usable.length === 0) {
     return NextResponse.json({ active: false });
   }
 
@@ -41,8 +62,8 @@ export async function GET(request: NextRequest) {
     if (!match) return 1.0;
     return parseFloat(match[0].replace('_', '.'));
   };
-  data.sort((a, b) => parseMultiplier(b.product_slug) - parseMultiplier(a.product_slug));
-  const active = data[0];
+  usable.sort((a, b) => parseMultiplier(b.product_slug) - parseMultiplier(a.product_slug));
+  const active = usable[0];
 
   return NextResponse.json({
     active: true,

@@ -66,27 +66,27 @@ export default function MyRedemptions() {
 
   if (!authenticated) {
     return (
-      <main className="min-h-screen bg-rxBg text-rxText flex items-center justify-center">
+      <main className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-3xl font-bold mb-4">Please Log In</h1>
-          <p className="text-gray-400">You need to be logged in to view your rewards</p>
+          <p className="text-gray-300">You need to be logged in to view your rewards</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-rxBg text-rxText p-6">
-      <div className="max-w-6xl mx-auto">
+    <main className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-6">
+      <div className="max-w-6xl mx-auto text-white">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-cyan-400 mb-2">My Rewards</h1>
-            <p className="text-gray-400">View and manage your redeemed rewards</p>
+            <h1 className="text-4xl font-bold mb-2">My Rewards</h1>
+            <p className="text-gray-300">View and manage your redeemed rewards</p>
           </div>
           <Link
             href="/rewards"
-            className="px-6 py-3 bg-cyan-400 text-black rounded-lg font-semibold hover:bg-cyan-300 transition"
+            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition"
           >
             ← Back to Marketplace
           </Link>
@@ -94,16 +94,16 @@ export default function MyRedemptions() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-rxCard rounded-xl p-6 border border-rxBlue/20">
-            <div className="text-sm text-gray-400 mb-2">Total RWT Spent</div>
+          <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-6">
+            <div className="text-sm text-gray-300 mb-2">Total RWT Spent</div>
             <div className="text-3xl font-bold text-cyan-400">{summary.total_spent.toLocaleString()}</div>
           </div>
-          <div className="bg-rxCard rounded-xl p-6 border border-green-400/20">
-            <div className="text-sm text-gray-400 mb-2">Active Coupons</div>
+          <div className="bg-white/10 backdrop-blur-lg border border-green-400/30 rounded-xl p-6">
+            <div className="text-sm text-gray-300 mb-2">Active Coupons</div>
             <div className="text-3xl font-bold text-green-400">{summary.active_coupons}</div>
           </div>
-          <div className="bg-rxCard rounded-xl p-6 border border-purple-400/20">
-            <div className="text-sm text-gray-400 mb-2">Used Coupons</div>
+          <div className="bg-white/10 backdrop-blur-lg border border-purple-400/30 rounded-xl p-6">
+            <div className="text-sm text-gray-300 mb-2">Used Coupons</div>
             <div className="text-3xl font-bold text-purple-400">{summary.used_coupons}</div>
           </div>
         </div>
@@ -115,7 +115,7 @@ export default function MyRedemptions() {
             className={`px-6 py-2 rounded-full whitespace-nowrap transition ${
               selectedStatus === null
                 ? 'bg-cyan-400 text-black font-semibold'
-                : 'bg-rxCard text-gray-400 hover:bg-rxPurple/30'
+                : 'bg-white/10 text-gray-300 hover:bg-white/20'
             }`}
           >
             All ({redemptions.length})
@@ -125,7 +125,7 @@ export default function MyRedemptions() {
             className={`px-6 py-2 rounded-full whitespace-nowrap transition ${
               selectedStatus === 'claimed'
                 ? 'bg-green-400 text-black font-semibold'
-                : 'bg-[#1F2833] text-gray-400 hover:bg-[#2A3441]'
+                : 'bg-white/10 text-gray-300 hover:bg-white/20'
             }`}
           >
             ✅ Active
@@ -135,7 +135,7 @@ export default function MyRedemptions() {
             className={`px-6 py-2 rounded-full whitespace-nowrap transition ${
               selectedStatus === 'used'
                 ? 'bg-purple-400 text-black font-semibold'
-                : 'bg-[#1F2833] text-gray-400 hover:bg-[#2A3441]'
+                : 'bg-white/10 text-gray-300 hover:bg-white/20'
             }`}
           >
             🎉 Used
@@ -145,7 +145,7 @@ export default function MyRedemptions() {
             className={`px-6 py-2 rounded-full whitespace-nowrap transition ${
               selectedStatus === 'expired'
                 ? 'bg-red-400 text-black font-semibold'
-                : 'bg-[#1F2833] text-gray-400 hover:bg-[#2A3441]'
+                : 'bg-white/10 text-gray-300 hover:bg-white/20'
             }`}
           >
             ⏰ Expired
@@ -154,11 +154,11 @@ export default function MyRedemptions() {
 
         {/* Redemptions List */}
         {loading ? (
-          <p className="text-gray-400">Loading your rewards...</p>
+          <p className="text-gray-300">Loading your rewards...</p>
         ) : redemptions.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-400 text-lg mb-4">No rewards found</p>
-            <Link href="/rewards" className="text-cyan-400 hover:underline">
+            <p className="text-gray-300 text-lg mb-4">No rewards found</p>
+            <Link href="/rewards" className="text-cyan-300 hover:text-cyan-200">
               Browse rewards marketplace →
             </Link>
           </div>
@@ -192,7 +192,7 @@ function RedemptionCard({ redemption }: { redemption: Redemption }) {
   };
 
   return (
-    <div className="bg-rxCard rounded-xl p-6 border border-rxBlue/20 hover:border-rxBlue/40 transition">
+    <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-6 hover:border-cyan-400/60 transition">
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-start gap-4 flex-1">
           {/* Business Logo */}
@@ -206,16 +206,16 @@ function RedemptionCard({ redemption }: { redemption: Redemption }) {
 
           {/* Reward Info */}
           <div className="flex-1">
-            <div className="text-sm text-gray-400 mb-1">{reward.business_name}</div>
-            <h3 className="text-xl font-semibold mb-2">{reward.title}</h3>
-            <p className="text-gray-400 text-sm">{reward.description}</p>
+            <div className="text-sm text-gray-300 mb-1">{reward.business_name}</div>
+            <h3 className="text-xl font-semibold mb-2 text-white">{reward.title}</h3>
+            <p className="text-gray-300 text-sm">{reward.description}</p>
           </div>
         </div>
 
         {/* Status & Cost */}
         <div className="text-right">
           {getStatusBadge()}
-          <div className="mt-2 text-sm text-gray-400">
+          <div className="mt-2 text-sm text-gray-300">
             Cost: <span className="text-cyan-400 font-semibold">{redemption.rwt_spent} RWT</span>
           </div>
           {reward.original_value && (
@@ -225,8 +225,8 @@ function RedemptionCard({ redemption }: { redemption: Redemption }) {
       </div>
 
       {/* Redemption Code */}
-      <div className="bg-rxBg rounded-lg p-4 mb-4">
-        <div className="text-sm text-gray-400 mb-2">Redemption Code</div>
+      <div className="bg-black/40 rounded-lg p-4 mb-4 border border-white/10">
+        <div className="text-sm text-gray-300 mb-2">Redemption Code</div>
         <div className="flex items-center justify-between">
           <div className="text-2xl font-mono font-bold text-cyan-400 tracking-wider">
             {redemption.redemption_code}
@@ -236,7 +236,7 @@ function RedemptionCard({ redemption }: { redemption: Redemption }) {
               navigator.clipboard.writeText(redemption.redemption_code);
               alert('Code copied to clipboard!');
             }}
-            className="px-4 py-2 bg-cyan-400/20 text-cyan-400 rounded-lg hover:bg-cyan-400/30 transition text-sm"
+            className="px-4 py-2 bg-cyan-400/20 text-cyan-100 rounded-lg hover:bg-cyan-400/30 transition text-sm"
           >
             📋 Copy
           </button>
@@ -244,7 +244,7 @@ function RedemptionCard({ redemption }: { redemption: Redemption }) {
       </div>
 
       {/* Dates */}
-      <div className="flex gap-6 text-sm text-gray-400 mb-4">
+      <div className="flex gap-6 text-sm text-gray-300 mb-4">
         <div>
           <span className="font-semibold">Claimed:</span> {new Date(redemption.claimed_at).toLocaleString()}
         </div>
@@ -263,24 +263,24 @@ function RedemptionCard({ redemption }: { redemption: Redemption }) {
       {/* Show Details Button */}
       <button
         onClick={() => setShowDetails(!showDetails)}
-        className="text-cyan-400 hover:underline text-sm"
+        className="text-cyan-300 hover:text-cyan-200 text-sm"
       >
         {showDetails ? '▼ Hide' : '▶'} Redemption Instructions & Terms
       </button>
 
       {/* Expandable Details */}
       {showDetails && (
-        <div className="mt-4 pt-4 border-t border-cyan-400/20">
+        <div className="mt-4 pt-4 border-t border-cyan-400/30">
           {reward.redemption_instructions && (
             <div className="mb-4">
-              <h4 className="font-semibold text-cyan-400 mb-2">📝 How to Redeem:</h4>
-              <p className="text-gray-300 text-sm">{reward.redemption_instructions}</p>
+              <h4 className="font-semibold text-cyan-300 mb-2">📝 How to Redeem:</h4>
+              <p className="text-gray-200 text-sm">{reward.redemption_instructions}</p>
             </div>
           )}
           {reward.terms && (
             <div>
-              <h4 className="font-semibold text-cyan-400 mb-2">📜 Terms & Conditions:</h4>
-              <p className="text-gray-400 text-xs">{reward.terms}</p>
+              <h4 className="font-semibold text-cyan-300 mb-2">📜 Terms & Conditions:</h4>
+              <p className="text-gray-300 text-xs">{reward.terms}</p>
             </div>
           )}
         </div>
