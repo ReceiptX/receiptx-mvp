@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabaseClient";
+import { supabaseService } from "@/lib/supabaseServiceClient";
 
 // GET /api/multipliers/active?user_email=...&telegram_id=...&wallet_address=...
 export async function GET(request: NextRequest) {
@@ -12,12 +12,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "User identifier required" }, { status: 400 });
   }
 
-  const client = supabaseAdmin;
-  if (!client) {
-    console.error("Supabase service role client unavailable in multipliers/active");
-    return NextResponse.json({ error: "Service configuration error" }, { status: 500 });
-  }
-
   const identifierFilters: string[] = [];
   if (user_email) identifierFilters.push(`user_email.eq.${user_email}`);
   if (telegram_id) identifierFilters.push(`telegram_id.eq.${telegram_id}`);
@@ -27,7 +21,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "No user identifier found" }, { status: 400 });
   }
 
-  let query = client
+  let query = supabaseService
     .from("user_multipliers")
     .select("*")
     .eq("active", true)
@@ -38,6 +32,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await query;
 
   if (error) {
+    console.error("[multipliers/active] Supabase error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

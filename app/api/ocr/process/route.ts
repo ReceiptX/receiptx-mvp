@@ -113,7 +113,10 @@ export async function POST(req: NextRequest) {
 
     if (contentType.includes('application/json')) {
       jsonBody = await req.json();
-      const dataUrl = typeof jsonBody.image === 'string' ? jsonBody.image : undefined;
+      const rawImage = jsonBody && typeof jsonBody === 'object'
+        ? (jsonBody as Record<string, unknown>)['image']
+        : undefined;
+      const dataUrl = typeof rawImage === 'string' ? rawImage : undefined;
       if (!dataUrl?.startsWith('data:')) {
         return NextResponse.json(
           { success: false, error: 'No image provided' },
@@ -133,8 +136,8 @@ export async function POST(req: NextRequest) {
     }
 
     const getField = (key: string): string | null => {
-      if (jsonBody) {
-        const value = jsonBody[key];
+      if (jsonBody && typeof jsonBody === 'object') {
+        const value = (jsonBody as Record<string, unknown>)[key];
         if (value === undefined || value === null) {
           return null;
         }
@@ -148,10 +151,10 @@ export async function POST(req: NextRequest) {
       return value !== null && value !== undefined ? String(value) : null;
     };
 
-    const telegram_id = getField('telegram_id') || undefined;
-    const user_email = getField('user_email') || undefined;
-    const password = getField('password') || undefined;
-    let wallet_address = getField('wallet_address') || undefined;
+    const telegram_id = getField('telegram_id');
+    const user_email = getField('user_email');
+    const password = getField('password');
+    let wallet_address = getField('wallet_address');
 
     if (!file) {
       return NextResponse.json(
@@ -374,6 +377,8 @@ export async function POST(req: NextRequest) {
 
     const brand = detectBrand(rawText); // custom logic below
     const multiplier = brandMultiplier(brand);
+    const validatorUserEmail = user_email ?? undefined;
+    const validatorTelegramId = telegram_id ?? undefined;
     
     console.log(`🏷️ Brand: ${brand}, Multiplier: ${multiplier}x${isLotteryTicket ? ' + 2x Lottery Bonus 🎰' : ''}`);
 
@@ -384,8 +389,8 @@ export async function POST(req: NextRequest) {
       totalAmount: amount,
       merchantName: brand,
       purchaseDate: new Date().toISOString(), // Will extract properly from OCR
-      userEmail: user_email,
-      telegramId: telegram_id,
+      userEmail: validatorUserEmail,
+      telegramId: validatorTelegramId,
       imageUrl: image_url,
       imageHash: imageHash // SHA-256 hash of image for duplicate detection
     });
