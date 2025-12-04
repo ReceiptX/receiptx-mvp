@@ -2,17 +2,30 @@ import { NextResponse } from "next/server";
 import { supabaseService } from "@/lib/supabaseServiceClient";
 export const dynamic = "force-dynamic";
 
-// Proprietary integrations are disabled for this deployment target.
 let api: any = null;
 let bridge: any = null;
 let distributor: any = null;
 
 async function initProprietaryModules() {
-  // Stub ensures TypeScript is satisfied while keeping deployment safe.
-  api = null;
-  bridge = null;
-  distributor = null;
-  return false;
+  try {
+    const [apiModule, bridgeModule, distributorModule] = await Promise.all([
+      import("@/lib/proprietary/businessAPI").catch(() => null),
+      import("@/lib/proprietary/web2web3Bridge").catch(() => null),
+      import("@/lib/proprietary/tokenDistributor").catch(() => null),
+    ]);
+
+    api = apiModule?.default ?? apiModule;
+    bridge = bridgeModule?.default ?? bridgeModule;
+    distributor = distributorModule?.default ?? distributorModule;
+
+    return Boolean(api && bridge && distributor);
+  } catch (error) {
+    console.warn("proprietary modules unavailable", error);
+    api = null;
+    bridge = null;
+    distributor = null;
+    return false;
+  }
 }
 
 export async function POST(req: Request) {

@@ -51,7 +51,7 @@ next-env.d.ts
 *.sql
 
 # Proprietary technology (keep local only)
-# lib/proprietary/
+lib/proprietary/
 lib/seamlessWalletGenerator.ts
 # lib/entropyEngine.ts
 # lib/blockchain/
