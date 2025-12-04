@@ -4,6 +4,7 @@ import { MultiTenantWalletGenerator } from '@/lib/multiTenantWalletGenerator';
 import { checkRateLimit, getRateLimitHeaders } from '@/lib/rateLimiter';
 import { supabase } from '@/lib/supabaseClient';
 import { sendSecurityEmail } from '@/lib/emailService';
+export const dynamic = 'force-dynamic';
 
 const RECEIPTX_TENANT_CONFIG = {
   tenant_id: process.env.RECEIPTX_TENANT_ID || "receiptx_main",

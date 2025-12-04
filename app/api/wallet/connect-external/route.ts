@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { SupraWalletIntegration } from "@/lib/supraWalletIntegration";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 /**
  * Connect external wallet (StarKey, MetaMask) to user account

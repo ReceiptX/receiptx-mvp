@@ -4,6 +4,7 @@ import { deriveWalletEntropy, createSupraKeypairFromEntropy } from '@/lib/crypto
 import { encryptPrivateKey } from '@/lib/crypto/aesGcm';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {

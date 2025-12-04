@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseService } from "@/lib/supabaseServiceClient";
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 // GET /api/multipliers/active?user_email=...&telegram_id=...&wallet_address=...
 export async function GET(request: NextRequest) {

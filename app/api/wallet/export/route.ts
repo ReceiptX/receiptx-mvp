@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { sendSecurityEmail } from '@/lib/emailService';
 import { checkRateLimit, getRateLimitHeaders } from '@/lib/rateLimiter';
 import { supabase } from '@/lib/supabaseClient';
+export const dynamic = 'force-dynamic';
 
 async function decryptPrivateKey(encrypted: string, userSecret: string): Promise<string> {
   const encoder = new TextEncoder();

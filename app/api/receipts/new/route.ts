@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { supabaseService } from '@/lib/supabaseServiceClient'
 import { BASE_RWT_PER_CURRENCY_UNIT } from '@/lib/multipliers'
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { supabaseService } from "@/lib/supabaseServiceClient";
 import { processImageOCR } from "@/lib/ocrService";
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const formData = await request.formData();

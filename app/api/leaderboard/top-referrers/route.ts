@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseService } from '@/lib/supabaseServiceClient';
-
-export const runtime = 'edge';
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET() {
   const { data, error } = await supabaseService.from('v_top_referrers').select('*').limit(10);

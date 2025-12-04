@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import crypto from 'crypto';
+export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/wallet/export-backup
