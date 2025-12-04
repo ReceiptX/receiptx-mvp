@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { envServer } from './env.server';
 
 export function verifyOcrSignature(rawBody: string, signature: string | null) {
+  if (!envServer.ocrWebhookSecret) return false;
   if (!signature) return false;
 
   const h = crypto
