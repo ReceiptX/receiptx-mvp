@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseService as supabase } from "@/lib/supabaseServiceClient";
+export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
