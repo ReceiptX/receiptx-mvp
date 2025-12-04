@@ -7,9 +7,10 @@ const scriptSrc = [
   'https://auth.privy.io',
   'https://app.privy.io',
   'https://*.privy.io',
+  "'unsafe-inline'", // allow inline scripts required by Privy/auth widgets
 ];
 if (isDev) {
-  scriptSrc.push("'unsafe-inline'", "'unsafe-eval'", 'blob:');
+  scriptSrc.push("'unsafe-eval'", 'blob:');
 }
 
 const connectSrc = [
