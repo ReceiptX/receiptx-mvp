@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+export { dynamic } from "@/lib/apiDynamic";
 
 // Proprietary integrations are disabled for this deployment target.
 let api: any = null;

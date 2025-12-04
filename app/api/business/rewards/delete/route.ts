@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseClient";
+export { dynamic } from "@/lib/apiDynamic";
 
 export async function DELETE(request: Request) {
   try {

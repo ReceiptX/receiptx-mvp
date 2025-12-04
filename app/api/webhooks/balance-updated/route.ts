@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+export { dynamic } from "@/lib/apiDynamic";
 
 /**
  * Webhook: Balance Updated

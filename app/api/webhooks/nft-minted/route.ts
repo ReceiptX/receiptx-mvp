@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
  * Triggered when a new NFT is created in the database
  * Purpose: Sync NFT minting to blockchain
  */
+export { dynamic } from "@/lib/apiDynamic";
 export async function POST(req: NextRequest) {
   try {
     // Verify webhook secret

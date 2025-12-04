@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
  * Triggered when an NFT is converted to AIA tokens
  * Purpose: Burn NFT on-chain and mint AIA tokens
  */
+export { dynamic } from "@/lib/apiDynamic";
 export async function POST(req: NextRequest) {
   try {
     // Verify webhook secret

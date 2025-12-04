@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseService } from "@/lib/supabaseServiceClient";
-
-export const dynamic = 'force-dynamic'; // prevent static rendering of this route
+export { dynamic } from "@/lib/apiDynamic";
 
 // GET /api/multipliers/active?user_email=...&telegram_id=...&wallet_address=...
 export async function GET(request: NextRequest) {

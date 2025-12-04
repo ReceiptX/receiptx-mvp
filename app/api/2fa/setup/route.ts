@@ -3,6 +3,7 @@ import { randomBytes } from 'crypto';
 import * as otplib from 'otplib';
 import qrcode from 'qrcode';
 import { sendSecurityEmail } from '@/lib/emailService';
+export { dynamic } from '@/lib/apiDynamic';
 
 export async function POST(req: Request) {
   let email = '';

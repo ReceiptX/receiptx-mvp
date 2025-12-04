@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import getUserFromRequest from "@/lib/authEdge";
 import { runAgent } from "@/lib/ai/agent";
 import { UserIdentity } from "@/lib/ai/tools";
+export { dynamic } from "@/lib/apiDynamic";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req);
