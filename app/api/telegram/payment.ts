@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabaseClient";
 
 // TODO: Implement Telegram signature validation for security!
 
+export const runtime = "nodejs";
 export async function POST(req: NextRequest) {
   const data = await req.json();
   // Example payload: { user_id, product_slug, payment_status }
@@ -22,3 +23,4 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ ok: true });
 }
+

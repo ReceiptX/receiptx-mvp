@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin as supabase } from '@/lib/supabaseClient'
 
+export const runtime = "nodejs";
 export async function POST(request: Request) {
   try {
     const { telegram_id } = await request.json()
@@ -31,3 +32,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: err.message })
   }
 }
+

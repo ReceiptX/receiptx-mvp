@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseClient";
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function PATCH(request: Request) {
   try {
@@ -62,3 +63,4 @@ export async function PATCH(request: Request) {
     );
   }
 }
+

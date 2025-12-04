@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseClient";
 
+export const runtime = "nodejs";
 export async function GET(request: Request) {
   try {
     const { data, error } = await supabase
@@ -29,3 +30,4 @@ export async function GET(request: Request) {
     );
   }
 }
+

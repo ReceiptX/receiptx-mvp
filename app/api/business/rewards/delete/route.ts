@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseClient";
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function DELETE(request: Request) {
   try {
@@ -50,3 +51,4 @@ export async function DELETE(request: Request) {
     );
   }
 }
+

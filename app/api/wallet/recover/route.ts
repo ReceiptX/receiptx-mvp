@@ -4,6 +4,7 @@ import { MultiTenantWalletGenerator } from '@/lib/multiTenantWalletGenerator';
 import { checkRateLimit, getRateLimitHeaders } from '@/lib/rateLimiter';
 import { supabase } from '@/lib/supabaseClient';
 import { sendSecurityEmail } from '@/lib/emailService';
+export const runtime = "nodejs";
 export const dynamic = 'force-dynamic';
 
 const RECEIPTX_TENANT_CONFIG = {
@@ -96,3 +97,4 @@ export async function POST(req: Request) {
     } catch {}
   }
 }
+

@@ -3,6 +3,7 @@ import * as otplib from 'otplib';
 import { supabase } from '@/lib/supabaseClient';
 import { sendSecurityEmail } from '@/lib/emailService';
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   let status = 'success';
@@ -82,3 +83,4 @@ export async function POST(req: Request) {
     } catch {}
   }
 }
+

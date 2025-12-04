@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseClient";
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET() {
   // Aggregate non-PII analytics
@@ -37,3 +38,4 @@ export async function GET() {
     brandStats: Object.entries(brandStats).map(([brand, stats]) => ({ brand, ...stats })),
   });
 }
+

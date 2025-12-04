@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { MultiTenantWalletGenerator } from '@/lib/multiTenantWalletGenerator';
 
 // ReceiptX tenant configuration
+export const runtime = "nodejs";
 const RECEIPTX_TENANT_CONFIG = {
   tenant_id: process.env.RECEIPTX_TENANT_ID || "receiptx_main",
   tenant_salt: process.env.RECEIPTX_TENANT_SALT || process.env.WEB2WEB3_SECRET_KEY || "",
@@ -80,3 +81,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

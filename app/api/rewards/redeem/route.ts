@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseClient";
 
+export const runtime = "nodejs";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -207,3 +208,4 @@ export async function POST(request: Request) {
     );
   }
 }
+
