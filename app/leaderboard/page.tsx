@@ -1,74 +1,52 @@
-"use client";
+import { supabaseService } from '@/lib/supabaseServiceClient';
 
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
-
-type Row = {
-  referrer_code: string;
-  referral_count: number;
-  users: { email: string | null } | null;
+type ReferrerRow = {
+  referrer_email: string | null;
+  referrer_telegram_id: string | null;
+  referrer_wallet_address: string | null;
+  total_referrals: number;
+  rewarded_referrals: number;
+  total_aia_earned: number;
 };
 
-export default function LeaderboardPage() {
-  const [globalLB, setGlobalLB] = useState<Row[]>([]);
-  const [telegramLB, setTelegramLB] = useState<Row[]>([]);
-  const [waitlistCount, setWaitlistCount] = useState<number>(0);
+const FALLBACK_WAITLIST_COUNT = 0;
 
-  async function fetchData() {
-    // Global top 10
-    const { data: global, error: globalErr } = await supabase
-      .from('referrals')
-      .select('referrer_code, referral_count:referrer_code, users!inner(email)')
-      .order('referral_count', { ascending: false })
-      .limit(10);
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-    if (!globalErr && global) setGlobalLB(global as any);
+export default async function LeaderboardPage() {
+  const client = supabaseService;
 
-    // Telegram top 10 (join users where is_telegram = true)
-    const { data: tele, error: teleErr } = await supabase
-      .from('referrals')
-      .select('referrer_code, referral_count:referrer_code, users!inner(email,is_telegram)')
-      .eq('users.is_telegram', true)
-      .order('referral_count', { ascending: false })
-      .limit(10);
-
-    if (!teleErr && tele) setTelegramLB(tele as any);
-
-    // Waitlist live count
-    const { count } = await supabase
+  const [
+    { data: referrerRows, error: referrerError },
+    { count: waitlistCountRaw, error: waitlistError },
+  ] = await Promise.all([
+    client
+      .from('v_top_referrers')
+      .select('referrer_email, referrer_telegram_id, referrer_wallet_address, total_referrals, rewarded_referrals, total_aia_earned')
+      .order('total_referrals', { ascending: false })
+      .limit(100),
+    client
       .from('waitlist')
-      .select('*', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true }),
+  ]);
 
-    setWaitlistCount(count || 0);
+  if (referrerError) {
+    console.error('leaderboard load failed', referrerError);
   }
 
-  useEffect(() => {
-    fetchData();
+  if (waitlistError && waitlistError.code !== 'PGRST116') {
+    console.error('waitlist count load failed', waitlistError);
+  }
 
-    // Realtime: re-fetch whenever referrals change
-    const channel = supabase
-      .channel('referrals-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'referrals' },
-        () => fetchData()
-      )
-      .subscribe();
+  const rows: ReferrerRow[] = Array.isArray(referrerRows) ? referrerRows : [];
+  const globalLB = rows.slice(0, 10);
+  const telegramLB = rows.filter((row) => row.referrer_telegram_id).slice(0, 10);
 
-    const waitlistChannel = supabase
-      .channel('waitlist-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'waitlist' },
-        () => fetchData()
-      )
-      .subscribe();
+  const waitlistCount = typeof waitlistCountRaw === 'number' ? waitlistCountRaw : FALLBACK_WAITLIST_COUNT;
 
-    return () => {
-      supabase.removeChannel(channel);
-      supabase.removeChannel(waitlistChannel);
-    };
-  }, []);
+  const formatIdentifier = (row: ReferrerRow) =>
+    row.referrer_email || row.referrer_telegram_id || row.referrer_wallet_address || 'Unknown';
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0B0C10] via-[#1F2235] to-[#232946] text-white flex flex-col items-center px-4 py-10">
@@ -91,16 +69,16 @@ export default function LeaderboardPage() {
           <div className="space-y-2">
             {globalLB.map((row, idx) => (
               <div
-                key={row.referrer_code + idx}
+                key={`${formatIdentifier(row)}-${idx}`}
                 className="flex items-center justify-between bg-[#232946] border border-cyan-700/30 rounded-xl px-4 py-3 shadow-lg"
               >
                 <div className="flex items-center gap-3">
                   <span className="w-6 text-center font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow">{idx + 1}</span>
-                  <span className="text-sm text-slate-200">{row.users?.email || 'Unknown'}</span>
+                  <span className="text-sm text-slate-200">{formatIdentifier(row)}</span>
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-slate-400">Referrals</p>
-                  <p className="text-lg font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow">{row.referral_count}</p>
+                  <p className="text-lg font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow">{row.total_referrals}</p>
                 </div>
               </div>
             ))}
@@ -120,16 +98,16 @@ export default function LeaderboardPage() {
           <div className="space-y-2">
             {telegramLB.map((row, idx) => (
               <div
-                key={row.referrer_code + idx}
+                key={`${formatIdentifier(row)}-${idx}`}
                 className="flex items-center justify-between bg-[#232946] border border-cyan-700/30 rounded-xl px-4 py-3 shadow-lg"
               >
                 <div className="flex items-center gap-3">
                   <span className="w-6 text-center font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow">{idx + 1}</span>
-                  <span className="text-sm text-slate-200">{row.users?.email || 'Unknown'}</span>
+                  <span className="text-sm text-slate-200">{formatIdentifier(row)}</span>
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-slate-400">Referrals</p>
-                  <p className="text-lg font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow">{row.referral_count}</p>
+                  <p className="text-lg font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow">{row.total_referrals}</p>
                 </div>
               </div>
             ))}

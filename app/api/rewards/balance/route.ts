@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseService } from "@/lib/supabaseServiceClient";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,8 +17,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const client = supabaseService;
+
     // Get total RWT earned from receipts
-    let receiptsQuery = supabase.from("receipts").select("rwt_earned");
+    let receiptsQuery = client.from("receipts").select("rwt_earned");
 
     if (user_email) {
       receiptsQuery = receiptsQuery.eq("user_email", user_email);
@@ -28,11 +30,22 @@ export async function GET(request: NextRequest) {
       receiptsQuery = receiptsQuery.eq("wallet_address", wallet_address);
     }
 
-    const { data: receipts } = await receiptsQuery;
+    const { data: receipts, error: receiptsError } = await receiptsQuery;
+
+    if (receiptsError) {
+      console.error("balance receipts query failed", receiptsError);
+      return NextResponse.json(
+        { error: "Failed to load receipt rewards" },
+        { status: 500 }
+      );
+    }
     const totalEarned = receipts?.reduce((sum: number, r: { rwt_earned?: number }) => sum + (r.rwt_earned || 0), 0) || 0;
 
     // Get total RWT spent on redemptions
-    let redemptionsQuery = supabase.from("user_redemptions").select("rwt_spent");
+    let redemptionsQuery = client
+      .from("user_redemptions")
+      .select("rwt_spent")
+      .neq("status", "cancelled");
 
     if (user_email) {
       redemptionsQuery = redemptionsQuery.eq("user_email", user_email);
@@ -42,7 +55,15 @@ export async function GET(request: NextRequest) {
       redemptionsQuery = redemptionsQuery.eq("wallet_address", wallet_address);
     }
 
-    const { data: redemptions } = await redemptionsQuery;
+    const { data: redemptions, error: redemptionsError } = await redemptionsQuery;
+
+    if (redemptionsError) {
+      console.error("balance redemptions query failed", redemptionsError);
+      return NextResponse.json(
+        { error: "Failed to load redemption history" },
+        { status: 500 }
+      );
+    }
     const totalSpent = redemptions?.reduce((sum: number, r: { rwt_spent?: number }) => sum + (r.rwt_spent || 0), 0) || 0;
 
     // Calculate current balance
@@ -51,7 +72,7 @@ export async function GET(request: NextRequest) {
     // Get AIA balance from user_stats
     let aiaBalance = 0;
     
-    let statsQuery = supabase.from("user_stats").select("total_aia_earned");
+    let statsQuery = client.from("user_stats").select("total_aia_earned");
     
     if (user_email) {
       statsQuery = statsQuery.eq("user_email", user_email);
@@ -61,7 +82,16 @@ export async function GET(request: NextRequest) {
       statsQuery = statsQuery.eq("wallet_address", wallet_address);
     }
 
-    const { data: statsData } = await statsQuery.single();
+    const { data: statsData, error: statsError } = await statsQuery.single();
+
+    if (statsError && statsError.code !== "PGRST116") {
+      // PGRST116 = row not found, treat as zero balance
+      console.error("balance stats query failed", statsError);
+      return NextResponse.json(
+        { error: "Failed to load AIA balance" },
+        { status: 500 }
+      );
+    }
 
     if (statsData) {
       aiaBalance = statsData.total_aia_earned || 0;
