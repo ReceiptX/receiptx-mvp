@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { supabaseService } from "@/lib/supabaseServiceClient";
 export const dynamic = "force-dynamic";
 
 // Proprietary integrations are disabled for this deployment target.
@@ -36,10 +37,46 @@ export async function POST(req: Request) {
 
     // Check if proprietary modules are available
     if (!api || !bridge || !distributor) {
-      return NextResponse.json(
-        { success: false, error: "Business integration not available in this deployment" },
-        { status: 503 }
-      );
+      const contactEmail = event.contact_email || event.email || event.business_email;
+
+      if (!contactEmail) {
+        return NextResponse.json(
+          { success: false, error: "contact_email is required when integration modules are unavailable" },
+          { status: 400 }
+        );
+      }
+
+      const fallbackPayload = {
+        business_name: event.business_name || event.company || "Unknown Business",
+        contact_name: event.contact_name || event.name || null,
+        contact_email: contactEmail,
+        contact_phone: event.contact_phone || event.phone || null,
+        website: event.website || event.company_url || null,
+        monthly_transactions: event.monthly_transactions || event.transaction_volume || null,
+        integration_preference: event.integration_preference || event.preferred_integration || null,
+        message: event.message || event.notes || null,
+        status: "new",
+        source: "integration_api",
+        metadata: event,
+      };
+
+      const { error: fallbackError } = await supabaseService
+        .from("business_signups")
+        .insert(fallbackPayload);
+
+      if (fallbackError) {
+        console.error("business/integrate fallback insert failed", fallbackError);
+        return NextResponse.json(
+          { success: false, error: "Failed to queue integration request" },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        queued: true,
+        message: "Integration request queued for follow-up",
+      }, { status: 202 });
     }
 
     // 1️⃣ Handle incoming business event
