@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import getUserFromRequest from "@/lib/authEdge";
 import { runAgent } from "@/lib/ai/agent";
 import { UserIdentity } from "@/lib/ai/tools";
-export { dynamic } from "@/lib/apiDynamic";
+export const dynamic = "force-dynamic";
 
 export const runtime = "nodejs";
 

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import * as otplib from 'otplib';
 import { supabase } from '@/lib/supabaseClient';
 import { sendSecurityEmail } from '@/lib/emailService';
-export { dynamic } from '@/lib/apiDynamic';
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   let status = 'success';

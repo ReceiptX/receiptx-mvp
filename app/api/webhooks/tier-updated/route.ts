@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
  * Triggered when user stakes/unstakes AIA or tier changes
  * Purpose: Sync staking tier and multiplier to blockchain
  */
-export { dynamic } from "@/lib/apiDynamic";
+export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     // Verify webhook secret

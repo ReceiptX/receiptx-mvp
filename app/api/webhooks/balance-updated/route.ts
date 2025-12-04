@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-export { dynamic } from "@/lib/apiDynamic";
+export const dynamic = "force-dynamic";
 
 /**
  * Webhook: Balance Updated

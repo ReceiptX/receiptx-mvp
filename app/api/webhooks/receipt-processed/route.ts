@@ -6,7 +6,7 @@ import crypto from "crypto";
  * Triggered when a receipt is verified and processed
  * Purpose: Sync receipt hash to Move VM registry (anti-fraud)
  */
-export { dynamic } from "@/lib/apiDynamic";
+export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     // Verify webhook secret
