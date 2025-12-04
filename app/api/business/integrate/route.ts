@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { supabaseService } from "@/lib/supabaseServiceClient";
 export const dynamic = "force-dynamic";
 
-let api: any = null;
-let bridge: any = null;
-let distributor: any = null;
+let api: unknown = null;
+let bridge: unknown = null;
+let distributor: unknown = null;
 
 async function initProprietaryModules() {
   try {
@@ -14,9 +14,9 @@ async function initProprietaryModules() {
       import("@/lib/proprietary/tokenDistributor").catch(() => null),
     ]);
 
-    api = apiModule?.default ?? apiModule;
-    bridge = bridgeModule?.default ?? bridgeModule;
-    distributor = distributorModule?.default ?? distributorModule;
+    api = apiModule && typeof apiModule === "object" && "default" in apiModule ? (apiModule as any).default : apiModule;
+    bridge = bridgeModule && typeof bridgeModule === "object" && "default" in bridgeModule ? (bridgeModule as any).default : bridgeModule;
+    distributor = distributorModule && typeof distributorModule === "object" && "default" in distributorModule ? (distributorModule as any).default : distributorModule;
 
     return Boolean(api && bridge && distributor);
   } catch (error) {
@@ -93,13 +93,13 @@ export async function POST(req: Request) {
     }
 
     // 1️⃣ Handle incoming business event
-    await api.handleBusinessEvent(event);
+    await (api as any).handleBusinessEvent(event);
 
     // 2️⃣ Bridge Web2 and Web3 states
-    await bridge.transparentTransaction(event);
+    await (bridge as any).transparentTransaction(event);
 
     // 3️⃣ Trigger token distribution
-    const result = await distributor.distribute(event);
+    const result = await (distributor as any).distribute(event);
 
     return NextResponse.json({ success: true, result });
   } catch (error: any) {

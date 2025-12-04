@@ -8,10 +8,11 @@ const PrivyProvider = dynamic(
 );
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-  const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID!;
+  const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 
   if (!appId) {
-    console.error("❌ Missing NEXT_PUBLIC_PRIVY_APP_ID in your .env file");
+    console.error('Missing NEXT_PUBLIC_PRIVY_APP_ID; rendering without PrivyProvider');
+    return <>{children}</>;
   }
 
   return (
