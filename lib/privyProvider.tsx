@@ -20,6 +20,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       appId={appId}
       config={{
         loginMethods: ['email'],
+        embeddedWallets: { createOnLogin: 'disabled' },
         appearance: {
           theme: 'dark',
           accentColor: '#00FFFF',
