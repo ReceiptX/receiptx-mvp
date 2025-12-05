@@ -1,3 +1,6 @@
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { BUSINESS_SESSION_COOKIE, verifyBusinessSession } from '@/lib/businessPortalAuth';
 import { supabaseService } from '@/lib/supabaseServiceClient';
 import {
   BusinessDashboardClient,
@@ -5,6 +8,7 @@ import {
   SignupCounts,
   SignupSummary,
   TopReferrer,
+  ApiUsageSummary,
 } from './BusinessDashboardClient';
 
 export const dynamic = 'force-dynamic';
@@ -12,7 +16,20 @@ export const dynamic = 'force-dynamic';
 const DEFAULT_STATUSES = ['new', 'contacted', 'in-progress', 'integrated', 'closed'];
 
 export default async function BusinessDashboard() {
-  const [brandAnalytics, topReferrersResponse, signupRowsResponse, statusRowsResponse] = await Promise.all([
+  const cookieValue = cookies().get(BUSINESS_SESSION_COOKIE)?.value || null;
+  const session = verifyBusinessSession(cookieValue);
+  if (!session.valid) {
+    redirect('/business/login');
+  }
+
+  const [
+    brandAnalytics,
+    topReferrersResponse,
+    signupRowsResponse,
+    statusRowsResponse,
+    apiEventResponse,
+    platformAggResponse,
+  ] = await Promise.all([
     supabaseService.rpc('get_brand_analytics'),
     supabaseService
       .from('v_top_referrers')
@@ -24,6 +41,12 @@ export default async function BusinessDashboard() {
       .order('created_at', { ascending: false })
       .limit(8),
     supabaseService.from('business_signups').select('status'),
+    supabaseService
+      .from('business_api_events')
+      .select('id, business_name, platform, total_amount, currency, status, created_at', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .limit(25),
+    supabaseService.from('v_business_api_platforms').select('platform, event_count, total_amount'),
   ]);
 
   const stats: ReceiptStat[] = Array.isArray(brandAnalytics.data) ? brandAnalytics.data : [];
@@ -50,12 +73,44 @@ export default async function BusinessDashboard() {
     byStatus,
   };
 
+  const apiEvents = Array.isArray(apiEventResponse.data) ? apiEventResponse.data : [];
+  const totalEvents = typeof apiEventResponse.count === 'number' ? apiEventResponse.count : apiEvents.length;
+  const uniqueBusinesses = new Set(apiEvents.map((evt: any) => evt.business_name).filter(Boolean)).size;
+  const totalAmount = apiEvents.reduce((sum: number, evt: any) => sum + Number(evt.total_amount || 0), 0);
+
+  const platformBreakdown =
+    Array.isArray(platformAggResponse.data) && platformAggResponse.data.length > 0
+      ? platformAggResponse.data.map((row: any) => ({
+          platform: row.platform,
+          event_count: row.event_count,
+          total_amount: row.total_amount,
+        }))
+      : Object.values(
+          apiEvents.reduce((acc: any, evt: any) => {
+            const platform = evt.platform || 'unknown';
+            if (!acc[platform]) acc[platform] = { platform, event_count: 0, total_amount: 0 };
+            acc[platform].event_count += 1;
+            acc[platform].total_amount += Number(evt.total_amount || 0);
+            return acc;
+          }, {} as Record<string, { platform: string; event_count: number; total_amount: number }>)
+        );
+
+  const apiUsage: ApiUsageSummary = {
+    totalEvents,
+    totalAmount,
+    uniqueBusinesses,
+    lastEventAt: apiEvents[0]?.created_at || null,
+    platformBreakdown,
+    recentEvents: apiEvents,
+  };
+
   return (
     <BusinessDashboardClient
       stats={stats}
       topReferrers={topReferrers}
       signups={signups}
       signupCounts={signupCounts}
+      apiUsage={apiUsage}
     />
   );
 }
