@@ -21,8 +21,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       config={{
         loginMethods: ['email'],
         embeddedWallets: {
-          ethereum: { createOnLogin: 'disabled' },
-          solana: { createOnLogin: 'disabled' },
+          ethereum: { createOnLogin: 'off' },
+          solana: { createOnLogin: 'off' },
         },
         appearance: {
           theme: 'dark',
