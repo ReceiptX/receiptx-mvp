@@ -9,6 +9,7 @@ import {
   SignupSummary,
   TopReferrer,
   ApiUsageSummary,
+  PlatformBreakdown,
 } from './BusinessDashboardClient';
 
 export const dynamic = 'force-dynamic';
@@ -78,13 +79,13 @@ export default async function BusinessDashboard() {
   const uniqueBusinesses = new Set(apiEvents.map((evt: any) => evt.business_name).filter(Boolean)).size;
   const totalAmount = apiEvents.reduce((sum: number, evt: any) => sum + Number(evt.total_amount || 0), 0);
 
-  const platformBreakdown =
+  const platformBreakdown: PlatformBreakdown[] =
     Array.isArray(platformAggResponse.data) && platformAggResponse.data.length > 0
       ? platformAggResponse.data.map((row: any) => ({
           platform: row.platform,
           event_count: row.event_count,
           total_amount: row.total_amount,
-        }))
+        })) as PlatformBreakdown[]
       : Object.values(
           apiEvents.reduce((acc: any, evt: any) => {
             const platform = evt.platform || 'unknown';
@@ -93,7 +94,7 @@ export default async function BusinessDashboard() {
             acc[platform].total_amount += Number(evt.total_amount || 0);
             return acc;
           }, {} as Record<string, { platform: string; event_count: number; total_amount: number }>)
-        );
+        ) as PlatformBreakdown[];
 
   const apiUsage: ApiUsageSummary = {
     totalEvents,
