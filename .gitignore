@@ -55,3 +55,7 @@ lib/proprietary/
 lib/seamlessWalletGenerator.ts
 # lib/entropyEngine.ts
 # lib/blockchain/
+
+# Allow build-safe stubs for proprietary modules to ship with the app
+!lib/proprietary
+!lib/proprietary/**
