@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
 const DEFAULT_STATUSES = ['new', 'contacted', 'in-progress', 'integrated', 'closed'];
 
 export default async function BusinessDashboard() {
-  const cookieValue = cookies().get(BUSINESS_SESSION_COOKIE)?.value || null;
+  const cookieValue = (await cookies()).get(BUSINESS_SESSION_COOKIE)?.value || null;
   const session = verifyBusinessSession(cookieValue);
   if (!session.valid) {
     redirect('/business/login');

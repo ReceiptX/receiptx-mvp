@@ -10,9 +10,9 @@ let distributor: any = null;
 async function initProprietaryModules() {
   try {
     const [apiModule, bridgeModule, distributorModule] = await Promise.all([
-      import("@/lib/proprietary/businessAPI").catch(() => null),
-      import("@/lib/proprietary/web2web3Bridge").catch(() => null),
-      import("@/lib/proprietary/tokenDistributor").catch(() => null),
+      import("@/lib/proprietary/businessAPI").catch(() => import("../../../../lib/proprietary/businessAPI").catch(() => null)),
+      import("@/lib/proprietary/web2web3Bridge").catch(() => import("../../../../lib/proprietary/web2web3Bridge").catch(() => null)),
+      import("@/lib/proprietary/tokenDistributor").catch(() => import("../../../../lib/proprietary/tokenDistributor").catch(() => null)),
     ]);
 
     api = apiModule && typeof apiModule === "object" && "default" in apiModule ? (apiModule as any).default : apiModule;
