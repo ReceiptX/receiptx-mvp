@@ -1,41 +1,48 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import Link from "next/link";
 import Image from "next/image";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
+
+const Logo = () => (
+  <div className="flex justify-center mb-8">
+    <Image
+      src="/logo.svg"
+      alt="ReceiptX Logo"
+      width={360}
+      height={160}
+      priority
+      className="drop-shadow-[0_0_30px_rgba(0,230,255,0.65)]"
+    />
+  </div>
+);
 
 export default function Home() {
   const { ready, authenticated, user, login, logout } = usePrivy();
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    if (ready) setLoading(false);
-  }, [ready]);
-
-  // Auto-redirect root '/' - preserve query parameters like ?ref=CODE
-  if (typeof window !== "undefined" && window.location.pathname === "/") {
-    const queryParams = window.location.search; // Preserve ?ref=CODE etc.
-    if (authenticated) {
-      redirect("/dashboard" + queryParams);
-    } else {
-      redirect("/landing" + queryParams);
+    if (!ready || typeof window === "undefined") {
+      return;
     }
-  }
 
-  const Logo = () => (
-    <div className="flex justify-center mb-8">
-      <Image
-        src="/logo.svg"
-        alt="ReceiptX Logo"
-        width={360}
-        height={160}
-        priority
-        className="drop-shadow-[0_0_30px_rgba(0,230,255,0.65)]"
-      />
-    </div>
-  );
+    const destination = authenticated ? "/dashboard" : "/landing";
+    const { pathname, search } = window.location;
+
+    if (pathname === destination) {
+      return;
+    }
+
+    if (pathname !== "/") {
+      return;
+    }
+
+    void router.replace(`${destination}${search}`);
+  }, [authenticated, ready, router]);
+
+  const loading = !ready;
 
   // ---------------------------
   // LOADING

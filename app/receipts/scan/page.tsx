@@ -1,18 +1,40 @@
 'use client'
 
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState, ChangeEvent } from 'react';
 
 import { usePrivy } from '@privy-io/react-auth';
 import dynamic from 'next/dynamic';
 const CameraCapture = dynamic(() => import('./CameraCapture'), { ssr: false });
 
 
+interface ReceiptReward {
+  total_rwt: number;
+  multiplier: number;
+  brand: string;
+  base_rwt: number;
+}
+
+interface ReceiptData {
+  brand: string;
+  amount: number;
+  multiplier: number;
+  id: string;
+}
+
+interface ReceiptResponse {
+  success?: boolean;
+  reward?: ReceiptReward;
+  data?: ReceiptData;
+  ocr_text?: string;
+  error?: string;
+}
+
 export default function ReceiptScanPage() {
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<ReceiptResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const { authenticated, ready } = usePrivy();
@@ -30,7 +52,7 @@ export default function ReceiptScanPage() {
     'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'application/pdf'
   ];
 
-  const handleFile = (event: any) => {
+  const handleFile = (event: ChangeEvent<HTMLInputElement>) => {
     const f = event.target.files?.[0];
     if (!f) return;
 
@@ -72,7 +94,7 @@ export default function ReceiptScanPage() {
           throw new Error(`Server error: ${res.status} ${res.statusText}`);
         }
 
-        const data = await res.json();
+        const data = (await res.json()) as ReceiptResponse;
         
         if (!data.success) {
           throw new Error(data.error || 'Receipt processing failed');
@@ -94,7 +116,7 @@ export default function ReceiptScanPage() {
           throw new Error(`Server error: ${res.status} ${res.statusText}`);
         }
 
-        const data = await res.json();
+        const data = (await res.json()) as ReceiptResponse;
         
         if (!data.success) {
           throw new Error(data.error || 'Receipt processing failed');
@@ -105,16 +127,17 @@ export default function ReceiptScanPage() {
       }
 
       setError('No photo or file selected to submit.');
-    } catch (err: any) {
-      console.error('submitReceipt error', err);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to submit receipt. Please try again.';
+      console.error('submitReceipt error', message);
       
       // Provide more specific error messages
-      if (err.message === 'Failed to fetch' || err.message.includes('fetch failed')) {
+      if (message === 'Failed to fetch' || message.includes('fetch failed')) {
         setError('Unable to connect to server. Please check your internet connection and try again.');
-      } else if (err.message.includes('Server error')) {
-        setError(`Server error: ${err.message}. Please try again later.`);
+      } else if (message.includes('Server error')) {
+        setError(`Server error: ${message}. Please try again later.`);
       } else {
-        setError(err?.message || 'Failed to submit receipt. Please try again.');
+        setError(message);
       }
     } finally {
       setLoading(false);
@@ -182,10 +205,13 @@ export default function ReceiptScanPage() {
       {/* Preview and retake/clear option */}
       {preview && (
         <div className="w-full max-w-xl flex flex-col items-center mb-6">
-          <img
+          <Image
             src={preview}
             alt="Receipt preview"
+            width={600}
+            height={600}
             className="rounded-xl border-4 border-cyan-400 max-h-96 w-full object-contain shadow-2xl bg-[#181A2A]"
+            unoptimized
           />
           <button
             onClick={() => {
@@ -201,7 +227,9 @@ export default function ReceiptScanPage() {
 
       <button
         onClick={submitReceipt}
-        disabled={loading || !file}
+        disabled={
+          loading || (!file && !preview) || !authenticated || !ready
+        }
         className="w-full max-w-xl px-6 py-4 rounded-xl bg-gradient-to-r from-green-400 via-emerald-500 to-teal-500 hover:from-green-300 hover:to-teal-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-xl font-bold shadow-xl mb-2 border-2 border-green-300/40"
       >
         {loading ? 'Processing...' : 'Submit Receipt'}
@@ -240,10 +268,10 @@ export default function ReceiptScanPage() {
           <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
             <h3 className="text-xl font-semibold text-cyan-400 mb-4">Receipt Details</h3>
             <div className="space-y-2 text-gray-300">
-              <p><strong>Brand:</strong> {result.data.brand}</p>
-              <p><strong>Amount:</strong> ${result.data.amount.toFixed(2)}</p>
-              <p><strong>Multiplier:</strong> {result.data.multiplier}x</p>
-              <p><strong>Receipt ID:</strong> {result.data.id.slice(0, 8)}...</p>
+              <p><strong>Brand:</strong> {result.data?.brand ?? 'Unknown'}</p>
+              <p><strong>Amount:</strong> ${result.data ? result.data.amount.toFixed(2) : '0.00'}</p>
+              <p><strong>Multiplier:</strong> {result.data?.multiplier ?? 0}x</p>
+              <p><strong>Receipt ID:</strong> {result.data ? `${result.data.id.slice(0, 8)}...` : 'N/A'}</p>
             </div>
             {result.ocr_text && (
               <details className="mt-4">
@@ -259,7 +287,7 @@ export default function ReceiptScanPage() {
         </div>
       )}
 
-      {result && !result.reward && !result.success && (
+      {result && !result.reward && result.success === false && (
         <div className="mt-6 bg-yellow-900/20 border border-yellow-700 p-4 rounded-lg">
           <h2 className="text-xl font-semibold text-yellow-400 mb-2">⚠️ Processing Issue</h2>
           <p className="text-gray-300 mb-2">

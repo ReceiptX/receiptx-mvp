@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
+import Image from 'next/image';
 import Link from 'next/link';
 
 interface Category {
@@ -273,7 +274,13 @@ function RewardCard({
       {/* Business Logo/Name */}
       <div className="flex items-center gap-3 mb-3">
         {reward.business_logo_url ? (
-          <img src={reward.business_logo_url} alt={reward.business_name} className="w-10 h-10 rounded-full" />
+          <Image
+            src={reward.business_logo_url}
+            alt={reward.business_name}
+            width={40}
+            height={40}
+            className="w-10 h-10 rounded-full object-cover"
+          />
         ) : (
           <div className="w-10 h-10 rounded-full bg-cyan-400/20 flex items-center justify-center text-cyan-400 font-bold">
             {reward.business_name[0]}

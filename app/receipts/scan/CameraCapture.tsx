@@ -1,7 +1,12 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 
-export default function CameraCapture({ onPhotoUpload }: { onPhotoUpload?: (data: string) => void }) {
+interface CameraCaptureProps {
+  onPhotoUpload?: (data: string) => void;
+}
+
+export default function CameraCapture({ onPhotoUpload }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -30,7 +35,7 @@ export default function CameraCapture({ onPhotoUpload }: { onPhotoUpload?: (data
         videoRef.current.srcObject = stream;
         try {
           await videoRef.current.play();
-        } catch (e) {
+        } catch {
           // ignore play errors
         }
       }
@@ -67,16 +72,24 @@ export default function CameraCapture({ onPhotoUpload }: { onPhotoUpload?: (data
   const uploadPhoto = async () => {
     if (!photo) return;
     setUploading(true);
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      body: JSON.stringify({ image: photo }),
-      headers: { "Content-Type": "application/json" },
-    });
-    setUploading(false);
-    const data = await res.json();
-    if (onPhotoUpload) onPhotoUpload(photo);
-    alert("Uploaded!");
-    console.log(data);
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: JSON.stringify({ image: photo }),
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (onPhotoUpload) {
+        onPhotoUpload(photo);
+      }
+      alert("Uploaded!");
+      console.log(data);
+    } catch (error) {
+      console.error("Upload failed:", error);
+      alert("Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -116,8 +129,8 @@ export default function CameraCapture({ onPhotoUpload }: { onPhotoUpload?: (data
           accept="image/*"
           ref={fileInputRef}
           className="hidden"
-          onChange={(e) => {
-            const f = e.target.files && e.target.files[0];
+          onChange={(event: ChangeEvent<HTMLInputElement>) => {
+            const f = event.target.files && event.target.files[0];
             if (!f) return;
             const reader = new FileReader();
             reader.onload = () => {
@@ -140,7 +153,14 @@ export default function CameraCapture({ onPhotoUpload }: { onPhotoUpload?: (data
       )}
       {photo && (
         <>
-          <img src={photo} alt="Receipt photo preview" className="w-full rounded-xl mt-5" />
+          <Image
+            src={photo}
+            alt="Receipt photo preview"
+            width={640}
+            height={640}
+            className="w-full rounded-xl mt-5"
+            unoptimized
+          />
           <button onClick={uploadPhoto} className="btn mt-2" disabled={uploading}>
             {uploading ? "Uploading..." : "Upload Receipt"}
           </button>

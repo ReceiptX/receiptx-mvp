@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
+import Image from 'next/image';
 import Link from 'next/link';
+import { useCallback } from 'react';
 
 interface Redemption {
   id: string;
@@ -27,42 +29,58 @@ interface Redemption {
   };
 }
 
+interface RedemptionSummary {
+  total_spent: number;
+  active_coupons: number;
+  used_coupons: number;
+}
+
 export default function MyRedemptions() {
   const { authenticated, user } = usePrivy();
   const [redemptions, setRedemptions] = useState<Redemption[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
-  const [summary, setSummary] = useState({ total_spent: 0, active_coupons: 0, used_coupons: 0 });
+  const [summary, setSummary] = useState<RedemptionSummary>({
+    total_spent: 0,
+    active_coupons: 0,
+    used_coupons: 0,
+  });
 
-  useEffect(() => {
-    if (authenticated && user) {
-      fetchRedemptions();
+  const fetchRedemptions = useCallback(async () => {
+    if (!user) {
+      return;
     }
-  }, [authenticated, user, selectedStatus]);
 
-  async function fetchRedemptions() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      
-      if (user?.email?.address) params.append('user_email', user.email.address);
-      else if (user?.telegram?.telegramUserId) params.append('telegram_id', user.telegram.telegramUserId);
-      else if (user?.wallet?.address) params.append('wallet_address', user.wallet.address);
-      
+
+      if (user.email?.address) params.append('user_email', user.email.address);
+      else if (user.telegram?.telegramUserId) params.append('telegram_id', user.telegram.telegramUserId);
+      else if (user.wallet?.address) params.append('wallet_address', user.wallet.address);
+
       if (selectedStatus) params.append('status', selectedStatus);
 
-      const res = await fetch(`/api/rewards/my-redemptions?${params}`);
+      const res = await fetch(`/api/rewards/my-redemptions?${params.toString()}`);
       const data = await res.json();
 
       if (data.success) {
-        setRedemptions(data.redemptions);
-        setSummary(data.summary);
+        setRedemptions(data.redemptions as Redemption[]);
+        setSummary(data.summary as RedemptionSummary);
       }
-    } catch (error) {
-      console.error('Error fetching redemptions:', error);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error fetching redemptions.';
+      console.error('Error fetching redemptions:', message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }
+  }, [selectedStatus, user]);
+
+  useEffect(() => {
+    if (authenticated && user) {
+      void fetchRedemptions();
+    }
+  }, [authenticated, fetchRedemptions, user]);
 
   if (!authenticated) {
     return (
@@ -197,10 +215,16 @@ function RedemptionCard({ redemption }: { redemption: Redemption }) {
         <div className="flex items-start gap-4 flex-1">
           {/* Business Logo */}
           {reward.business_logo_url ? (
-            <img src={reward.business_logo_url} alt={reward.business_name} className="w-16 h-16 rounded-lg" />
+            <Image
+              src={reward.business_logo_url}
+              alt={reward.business_name}
+              width={64}
+              height={64}
+              className="w-16 h-16 rounded-lg object-cover"
+            />
           ) : (
             <div className="w-16 h-16 rounded-lg bg-cyan-400/20 flex items-center justify-center text-cyan-400 text-2xl font-bold">
-              {reward.business_name[0]}
+              {reward.business_name.charAt(0)}
             </div>
           )}
 
@@ -233,7 +257,7 @@ function RedemptionCard({ redemption }: { redemption: Redemption }) {
           </div>
           <button
             onClick={() => {
-              navigator.clipboard.writeText(redemption.redemption_code);
+              void navigator.clipboard.writeText(redemption.redemption_code);
               alert('Code copied to clipboard!');
             }}
             className="px-4 py-2 bg-cyan-400/20 text-cyan-100 rounded-lg hover:bg-cyan-400/30 transition text-sm"
