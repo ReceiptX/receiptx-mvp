@@ -128,32 +128,32 @@ export default function NFTsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-[#0B0C10] via-[#181A2A] to-[#232946] text-white px-6 py-10">
+      <div className="max-w-7xl mx-auto space-y-8">
         {/* Risk Disclaimer */}
         <RiskDisclaimer />
         
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">My NFT Collection</h1>
-            <p className="text-gray-600">Collect NFTs by scanning receipts and convert them to AIA tokens</p>
+            <h1 className="text-4xl font-bold text-white drop-shadow mb-2">My NFT Collection</h1>
+            <p className="text-slate-300">Collect milestone NFTs by scanning receipts or convert them into AIA tokens.</p>
           </div>
           <button
             onClick={() => router.push("/dashboard")}
-            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+            className="px-6 py-3 rounded-lg border border-white/20 bg-white/10 text-cyan-200 hover:bg-white/20 transition"
           >
             Back to Dashboard
           </button>
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex gap-4 mb-6">
+        <div className="flex gap-4">
           <button
             onClick={() => setFilter("active")}
             className={`px-6 py-2 rounded-lg font-medium transition ${
               filter === "active"
-                ? "bg-indigo-600 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-100"
+                ? "bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 text-black shadow-lg"
+                : "bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10"
             }`}
           >
             Active NFTs
@@ -162,8 +162,8 @@ export default function NFTsPage() {
             onClick={() => setFilter("converted")}
             className={`px-6 py-2 rounded-lg font-medium transition ${
               filter === "converted"
-                ? "bg-indigo-600 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-100"
+                ? "bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 text-black shadow-lg"
+                : "bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10"
             }`}
           >
             Converted
@@ -172,8 +172,8 @@ export default function NFTsPage() {
             onClick={() => setFilter("all")}
             className={`px-6 py-2 rounded-lg font-medium transition ${
               filter === "all"
-                ? "bg-indigo-600 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-100"
+                ? "bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 text-black shadow-lg"
+                : "bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10"
             }`}
           >
             All NFTs
@@ -181,25 +181,25 @@ export default function NFTsPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg mb-6">
+          <div className="bg-red-500/10 border border-red-500/30 text-red-200 px-6 py-4 rounded-lg">
             {error}
           </div>
         )}
 
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400"></div>
           </div>
         ) : nfts.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-md p-12 text-center">
+          <div className="bg-white/5 border border-white/10 rounded-xl shadow-lg p-12 text-center">
             <div className="text-6xl mb-4">🎁</div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">No NFTs Yet</h3>
-            <p className="text-gray-600 mb-6">
+            <h3 className="text-2xl font-bold text-white mb-2">No NFTs Yet</h3>
+            <p className="text-slate-300 mb-6">
               Keep scanning receipts to unlock milestone NFTs!
             </p>
             <button
               onClick={() => router.push("/receipts/scan")}
-              className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+              className="px-6 py-3 rounded-lg bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 text-black font-semibold shadow-lg hover:brightness-110 transition"
             >
               Scan Your First Receipt
             </button>
@@ -209,7 +209,7 @@ export default function NFTsPage() {
             {nfts.map((nft) => (
               <div
                 key={nft.id}
-                className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow"
+                className="bg-white/5 border border-white/10 rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow"
               >
                 <div className={`h-48 bg-gradient-to-br ${getTierColor(nft.nft_catalog.tier)} p-6 flex flex-col justify-between`}>
                   <div className="flex justify-between items-start">
@@ -231,11 +231,11 @@ export default function NFTsPage() {
                 </div>
 
                 <div className="p-6">
-                  <p className="text-gray-600 mb-4">{nft.nft_catalog.description}</p>
+                  <p className="text-slate-300 mb-4">{nft.nft_catalog.description}</p>
                   
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-sm text-gray-500">AIA Value:</span>
-                    <span className="text-2xl font-bold text-indigo-600">
+                    <span className="text-sm text-slate-400">AIA Value:</span>
+                    <span className="text-2xl font-bold text-cyan-300">
                       {nft.nft_catalog.aia_value} AIA
                     </span>
                   </div>
@@ -244,21 +244,21 @@ export default function NFTsPage() {
                     <button
                       onClick={() => handleConvert(nft.id, nft.nft_catalog.aia_value)}
                       disabled={converting === nft.id}
-                      className="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      className="w-full px-6 py-3 rounded-lg bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 text-black font-semibold shadow-lg hover:brightness-110 transition disabled:bg-slate-600 disabled:text-slate-400 disabled:cursor-not-allowed"
                     >
                       {converting === nft.id ? "Converting..." : "Convert to AIA"}
                     </button>
                   )}
 
                   {nft.status === "converted" && (
-                    <div className="text-center text-sm text-gray-500">
+                    <div className="text-center text-sm text-slate-400">
                       Converted on {new Date(nft.converted_at!).toLocaleDateString()}
                       <br />
                       Received: {nft.aia_received} AIA
                     </div>
                   )}
 
-                  <div className="mt-4 text-xs text-gray-400">
+                  <div className="mt-4 text-xs text-slate-500">
                     Earned: {new Date(nft.created_at).toLocaleDateString()}
                   </div>
                 </div>

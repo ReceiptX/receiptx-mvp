@@ -202,40 +202,41 @@ export default function StakingPage() {
   const nextTier = getNextTier();
   const currentStaked = stakingInfo?.staked_aia || 0;
   const nextTierRequired = nextTier ? nextTier.min_aia_staked - currentStaked : 0;
+  const progressPercent = nextTier ? Math.min((currentStaked / nextTier.min_aia_staked) * 100, 100) : 0;
 
   return (
-    <div className="min-h-screen bg-rxBg text-rxText p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-[#0B0C10] via-[#181A2A] to-[#232946] text-white px-6 py-10">
+      <div className="max-w-6xl mx-auto space-y-8">
         {/* Risk Disclaimer */}
         <RiskDisclaimer />
         
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-rxText mb-2">AIA Staking</h1>
-            <p className="text-rxText/70">Stake AIA tokens to unlock premium tier benefits</p>
+            <h1 className="text-4xl font-bold text-white drop-shadow mb-2">AIA Staking</h1>
+            <p className="text-slate-300">Stake AIA tokens to unlock premium tier benefits.</p>
           </div>
           <button
             onClick={() => router.push("/dashboard")}
-            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+            className="px-6 py-3 rounded-lg border border-white/20 bg-white/10 text-cyan-200 hover:bg-white/20 transition"
           >
             Back to Dashboard
           </button>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg mb-6">
+          <div className="bg-red-500/10 border border-red-500/30 text-red-200 px-6 py-4 rounded-lg">
             {error}
           </div>
         )}
 
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400"></div>
           </div>
         ) : (
           <>
             {/* Current Status Card */}
-            <div className={`bg-gradient-to-br ${getTierColor(stakingInfo?.current_tier || "bronze")} rounded-xl shadow-lg p-8 mb-8 text-white`}>
+            <div className={`bg-gradient-to-br ${getTierColor(stakingInfo?.current_tier || "bronze")} border border-white/15 rounded-xl shadow-2xl p-8 text-white`}>
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <p className="text-white/80 text-sm mb-1">Current Tier</p>
@@ -250,15 +251,10 @@ export default function StakingPage() {
               {nextTier && (
                 <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
                   <p className="text-sm mb-2">Progress to {nextTier.tier}</p>
-                  <div className="w-full bg-white/20 rounded-full h-3 mb-2">
+                  <div className="w-full bg-white/20 rounded-full h-3 mb-2 overflow-hidden">
                     <div
-                      className={
-                        `bg-white rounded-full h-3 transition-all` +
-                        ` ` +
-                        (nextTier.min_aia_staked > 0
-                          ? `w-[${Math.min((currentStaked / nextTier.min_aia_staked) * 100, 100)}%]`
-                          : 'w-0')
-                      }
+                      className="bg-white rounded-full h-3 transition-all"
+                      style={{ width: `${progressPercent}%` }}
                       aria-label="Progress bar"
                     ></div>
                   </div>
@@ -272,12 +268,12 @@ export default function StakingPage() {
             </div>
 
             {/* Stake/Unstake Cards */}
-            <div className="grid md:grid-cols-2 gap-6 mb-8">
+            <div className="grid md:grid-cols-2 gap-6">
               {/* Stake Card */}
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Stake AIA</h3>
-                <p className="text-gray-600 mb-4">
-                  Available: <span className="font-bold text-indigo-600">{availableAIA.toLocaleString()} AIA</span>
+              <div className="bg-white/5 border border-white/10 rounded-xl shadow-lg p-6">
+                <h3 className="text-2xl font-semibold text-white mb-4">Stake AIA</h3>
+                <p className="text-sm text-slate-300 mb-4">
+                  Available: <span className="font-semibold text-cyan-300">{availableAIA.toLocaleString()} AIA</span>
                 </p>
                 
                 <input
@@ -285,23 +281,23 @@ export default function StakingPage() {
                   value={stakeAmount}
                   onChange={(e) => setStakeAmount(e.target.value)}
                   placeholder="Amount to stake"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-lg mb-4 bg-[#101326] border border-white/10 text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                 />
 
                 <button
                   onClick={handleStake}
                   disabled={processing || !stakeAmount}
-                  className="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  className="w-full px-6 py-3 rounded-lg bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 text-black font-semibold shadow-lg hover:brightness-110 transition disabled:bg-slate-600 disabled:text-slate-400 disabled:cursor-not-allowed"
                 >
                   {processing ? "Processing..." : "Stake AIA"}
                 </button>
               </div>
 
               {/* Unstake Card */}
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Unstake AIA</h3>
-                <p className="text-gray-600 mb-4">
-                  Staked: <span className="font-bold text-indigo-600">{currentStaked.toLocaleString()} AIA</span>
+              <div className="bg-white/5 border border-white/10 rounded-xl shadow-lg p-6">
+                <h3 className="text-2xl font-semibold text-white mb-4">Unstake AIA</h3>
+                <p className="text-sm text-slate-300 mb-4">
+                  Staked: <span className="font-semibold text-emerald-300">{currentStaked.toLocaleString()} AIA</span>
                 </p>
                 
                 <input
@@ -309,13 +305,13 @@ export default function StakingPage() {
                   value={unstakeAmount}
                   onChange={(e) => setUnstakeAmount(e.target.value)}
                   placeholder="Amount to unstake"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-lg mb-4 bg-[#101326] border border-white/10 text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                 />
 
                 <button
                   onClick={handleUnstake}
                   disabled={processing || !unstakeAmount}
-                  className="w-full px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  className="w-full px-6 py-3 rounded-lg bg-gradient-to-r from-rose-500 via-red-500 to-orange-500 text-white font-semibold shadow-lg hover:brightness-110 transition disabled:bg-slate-600 disabled:text-slate-400 disabled:cursor-not-allowed"
                 >
                   {processing ? "Processing..." : "Unstake AIA"}
                 </button>
@@ -323,51 +319,51 @@ export default function StakingPage() {
             </div>
 
             {/* Tier Comparison Table */}
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-              <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                <h3 className="text-xl font-bold text-gray-900">All Tier Benefits</h3>
+            <div className="bg-white/5 border border-white/10 rounded-xl shadow-lg overflow-hidden">
+              <div className="px-6 py-4 bg-white/10 border-b border-white/10">
+                <h3 className="text-xl font-semibold text-white">All Tier Benefits</h3>
               </div>
               
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-white/5">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
                         Tier
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
                         Required Stake
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
                         Multiplier
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
                         Benefits
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-transparent divide-y divide-white/10">
                     {stakingInfo?.tier_requirements.map((tier) => (
                       <tr
                         key={tier.tier}
                         className={
                           tier.tier.toLowerCase() === stakingInfo.current_tier.toLowerCase()
-                            ? "bg-indigo-50"
+                            ? "bg-cyan-500/10"
                             : ""
                         }
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium text-white bg-gradient-to-r ${getTierColor(tier.tier)}`}>
+                          <span className={`px-3 py-1 rounded-full text-sm font-semibold text-white bg-gradient-to-r ${getTierColor(tier.tier)}`}>
                             {tier.tier}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-200">
                           {tier.min_aia_staked.toLocaleString()} AIA
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-200">
                           {tier.multiplier}x
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
+                        <td className="px-6 py-4 text-sm text-slate-300">
                           {tier.benefits?.description || "Standard benefits"}
                         </td>
                       </tr>

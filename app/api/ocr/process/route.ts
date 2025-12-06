@@ -81,15 +81,15 @@ export const runtime = "nodejs";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'application/pdf'];
-// --- Plinko integration variables ---
-let reqPlinkoResult: any = null;
-let reqPlinkoHash: string | null = null;
-let reqLotteryResult: any = null;
-
 export async function POST(req: NextRequest) {
   // Load blockchain integration at runtime only
   loadBlockchainIntegration();
   try {
+    // --- Plinko integration variables (request-scoped) ---
+    let reqPlinkoResult: any = null;
+    let reqPlinkoHash: string | null = null;
+    let reqLotteryResult: any = null;
+
     // Rate limiting by IP
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 
                 req.headers.get('x-real-ip') || 
