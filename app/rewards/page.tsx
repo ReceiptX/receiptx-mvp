@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import Link from 'next/link';
 
@@ -36,17 +36,7 @@ export default function RewardsMarketplace() {
   const [loading, setLoading] = useState(true);
   const [rwtBalance, setRwtBalance] = useState(0);
   const [redeeming, setRedeeming] = useState<string | null>(null);
-  const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
-
-  useEffect(() => {
-    fetchCategories();
-    fetchRewards();
-    if (authenticated && user) {
-      fetchBalance();
-    }
-  }, [authenticated, user, selectedCategory]);
-
-  async function fetchCategories() {
+  const fetchCategories = useCallback(async () => {
     try {
       const res = await fetch('/api/rewards/categories');
       const data = await res.json();
@@ -56,9 +46,9 @@ export default function RewardsMarketplace() {
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
-  }
+  }, []);
 
-  async function fetchRewards() {
+  const fetchRewards = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -72,13 +62,13 @@ export default function RewardsMarketplace() {
       }
     } catch (error) {
       console.error('Error fetching rewards:', error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }
+  }, [searchQuery, selectedCategory]);
 
-  async function fetchBalance() {
+  const fetchBalance = useCallback(async () => {
     try {
-      const identifier = user?.email?.address || user?.telegram?.telegramUserId || user?.wallet?.address;
       const params = new URLSearchParams();
       if (user?.email?.address) params.append('user_email', user.email.address);
       else if (user?.telegram?.telegramUserId) params.append('telegram_id', user.telegram.telegramUserId);
@@ -93,7 +83,21 @@ export default function RewardsMarketplace() {
     } catch (error) {
       console.error('Error fetching balance:', error);
     }
-  }
+  }, [user]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  useEffect(() => {
+    fetchRewards();
+  }, [fetchRewards]);
+
+  useEffect(() => {
+    if (authenticated && user) {
+      fetchBalance();
+    }
+  }, [authenticated, fetchBalance, user]);
 
   async function handleRedeem(reward: Reward) {
     if (!authenticated) {
@@ -128,13 +132,13 @@ export default function RewardsMarketplace() {
 
       if (data.success) {
         alert(`✅ Success!\n\nYour redemption code: ${data.redemption.code}\n\nCheck "My Rewards" to view details.`);
-        fetchBalance();
-        fetchRewards();
+        await Promise.all([fetchBalance(), fetchRewards()]);
       } else {
         alert(`❌ Error: ${data.error}`);
       }
-    } catch (error: any) {
-      alert(`❌ Error: ${error.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      alert(`❌ Error: ${message}`);
     }
 
     setRedeeming(null);
@@ -168,7 +172,11 @@ export default function RewardsMarketplace() {
             placeholder="Search rewards..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && fetchRewards()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                void fetchRewards();
+              }
+            }}
             className="w-full px-6 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-cyan-400"
           />
         </div>
@@ -176,7 +184,7 @@ export default function RewardsMarketplace() {
         {/* Categories */}
         <div className="flex gap-3 mb-8 overflow-x-auto pb-2">
           <button
-            onClick={() => { setSelectedCategory(null); fetchRewards(); }}
+            onClick={() => setSelectedCategory(null)}
             className={`px-6 py-2 rounded-full whitespace-nowrap transition ${
               selectedCategory === null
                 ? 'bg-cyan-400 text-black font-semibold'
@@ -188,7 +196,7 @@ export default function RewardsMarketplace() {
           {categories.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => { setSelectedCategory(cat.id); fetchRewards(); }}
+              onClick={() => setSelectedCategory(cat.id)}
               className={`px-6 py-2 rounded-full whitespace-nowrap transition ${
                 selectedCategory === cat.id
                   ? 'bg-cyan-400 text-black font-semibold'

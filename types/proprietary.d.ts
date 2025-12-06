@@ -1,4 +1,4 @@
 declare module '@/lib/proprietary/*' {
-  const mod: any;
+  const mod: unknown;
   export default mod;
 }

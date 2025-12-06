@@ -1,15 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
 import RiskDisclaimer from "../components/RiskDisclaimer";
+
+interface TierBenefits {
+  description?: string;
+  [key: string]: unknown;
+}
 
 interface TierRequirement {
   tier: string;
   min_aia_staked: number;
   multiplier: number;
-  benefits: any;
+  benefits?: TierBenefits;
 }
 
 interface StakingInfo {
@@ -36,14 +41,7 @@ export default function StakingPage() {
     }
   }, [ready, authenticated, router]);
 
-  useEffect(() => {
-    if (authenticated) {
-      fetchStakingInfo();
-      fetchBalance();
-    }
-  }, [authenticated]);
-
-  async function fetchStakingInfo() {
+  const fetchStakingInfo = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (user?.email?.address) params.set("user_email", user.email.address);
@@ -55,14 +53,15 @@ export default function StakingPage() {
       if (data.success) {
         setStakingInfo(data);
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to load staking info.";
+      setError(message);
     } finally {
       setLoading(false);
     }
-  }
+  }, [user]);
 
-  async function fetchBalance() {
+  const fetchBalance = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (user?.email?.address) params.set("user_email", user.email.address);
@@ -74,13 +73,21 @@ export default function StakingPage() {
       if (data.success) {
         setAvailableAIA(data.aiaBalance || 0);
       }
-    } catch (err: any) {
-      console.error("Failed to fetch balance:", err);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      console.error("Failed to fetch balance:", message);
     }
-  }
+  }, [user]);
+
+  useEffect(() => {
+    if (authenticated) {
+      fetchStakingInfo();
+      fetchBalance();
+    }
+  }, [authenticated, fetchBalance, fetchStakingInfo]);
 
   async function handleStake() {
-    const amount = parseInt(stakeAmount);
+    const amount = Number.parseInt(stakeAmount, 10);
     if (!amount || amount <= 0) {
       alert("Please enter a valid amount");
       return;
@@ -108,20 +115,21 @@ export default function StakingPage() {
       if (data.success) {
         alert(`Successfully staked ${amount} AIA! New tier: ${data.new_tier}`);
         setStakeAmount("");
-        fetchStakingInfo();
-        fetchBalance();
+        await fetchStakingInfo();
+        await fetchBalance();
       } else {
         alert(data.error || "Staking failed");
       }
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Staking failed";
+      alert(message);
     } finally {
       setProcessing(false);
     }
   }
 
   async function handleUnstake() {
-    const amount = parseInt(unstakeAmount);
+    const amount = Number.parseInt(unstakeAmount, 10);
     if (!amount || amount <= 0) {
       alert("Please enter a valid amount");
       return;
@@ -149,13 +157,14 @@ export default function StakingPage() {
       if (data.success) {
         alert(`Successfully unstaked ${amount} AIA! New tier: ${data.new_tier}`);
         setUnstakeAmount("");
-        fetchStakingInfo();
-        fetchBalance();
+        await fetchStakingInfo();
+        await fetchBalance();
       } else {
         alert(data.error || "Unstaking failed");
       }
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unstaking failed";
+      alert(message);
     } finally {
       setProcessing(false);
     }

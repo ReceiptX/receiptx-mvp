@@ -1,4 +1,4 @@
-import React from 'react';
+import Link from 'next/link';
 
 export const metadata = {
   title: 'ReceiptX Whitepaper',
@@ -43,7 +43,7 @@ export default function WhitepaperPage() {
           </div>
           <div className="bg-white/5 backdrop-blur-sm p-6 rounded-xl border border-cyan-700/20">
             <h3 className="text-lg font-bold mb-2 text-cyan-400">🎨 Auto-Minting NFTs</h3>
-            <p className="text-slate-300 text-sm">Milestone NFTs at 5, 15, 40, and 100 receipts, plus brand-specific "Warrior" NFTs.</p>
+            <p className="text-slate-300 text-sm">Milestone NFTs at 5, 15, 40, and 100 receipts, plus brand-specific &quot;Warrior&quot; NFTs.</p>
           </div>
           <div className="bg-white/5 backdrop-blur-sm p-6 rounded-xl border border-cyan-700/20">
             <h3 className="text-lg font-bold mb-2 text-cyan-400">🔐 Multi-Tenant Wallets</h3>
@@ -61,10 +61,10 @@ export default function WhitepaperPage() {
           <p className="text-slate-300 mb-6">
             Access the complete technical documentation including tokenomics, architecture diagrams, and roadmap.
           </p>
-          <a 
-            className="inline-block px-8 py-3 bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 rounded-xl text-white font-extrabold shadow-lg hover:scale-105 transition" 
-            href="/whitepaper.pdf" 
-            target="_blank" 
+          <a
+            className="inline-block px-8 py-3 bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 rounded-xl text-white font-extrabold shadow-lg hover:scale-105 transition"
+            href="/whitepaper.pdf"
+            target="_blank"
             rel="noopener noreferrer"
           >
             📥 Open PDF
@@ -73,9 +73,9 @@ export default function WhitepaperPage() {
 
         {/* Back to Home Link */}
         <div className="text-center mt-8">
-          <a href="/" className="text-cyan-400 hover:text-cyan-300 underline transition">
+          <Link href="/" className="text-cyan-400 hover:text-cyan-300 underline transition">
             ← Back to Home
-          </a>
+          </Link>
         </div>
       </div>
     </main>

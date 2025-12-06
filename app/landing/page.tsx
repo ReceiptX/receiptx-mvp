@@ -32,6 +32,7 @@ export default function LandingPage() {
   const [customCodeSuccess, setCustomCodeSuccess] = useState(false);
   const [refParam, setRefParam] = useState<string | null>(null);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [audience, setAudience] = useState<'shopper' | 'business'>('shopper');
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
 
   const searchParams = useSearchParams();
@@ -125,8 +126,8 @@ export default function LandingPage() {
       setCustomCodeError(null);
       setCustomCodeSuccess(false);
 
-      // Navigate to dashboard after successful waitlist join
-      router.push("/dashboard");
+      // Navigate to account balances immediately after signup
+      router.push("/dashboard?tab=balances");
     } else {
       console.error("Waitlist submission failed");
       alert("There was an error joining the waitlist. Please try again.");
@@ -173,16 +174,48 @@ export default function LandingPage() {
         </p>
       </section>
 
-      {/* WAITLIST SIGNUP */}
-      <section className="w-full max-w-lg mb-16">
-        <h2 className="text-xl font-extrabold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent text-center mb-4 drop-shadow">
-          Join the Waitlist for Airdrops, Rewards & Early Access
-        </h2>
+      <section className="w-full max-w-3xl mb-10">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-center gap-4">
+          <button
+            type="button"
+            onClick={() => setAudience('shopper')}
+            className={`flex-1 rounded-2xl border px-6 py-4 text-left transition ${
+              audience === 'shopper'
+                ? 'border-cyan-400/60 bg-cyan-400/10 shadow-lg'
+                : 'border-white/10 bg-white/5 hover:border-cyan-300/40 hover:bg-cyan-300/10'
+            }`}
+          >
+            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Earn Rewards</p>
+            <p className="mt-1 text-2xl font-bold text-white">I’m a shopper</p>
+            <p className="mt-2 text-sm text-slate-300">Upload receipts, collect RWT, unlock NFTs, and climb the leaderboard.</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setAudience('business')}
+            className={`flex-1 rounded-2xl border px-6 py-4 text-left transition ${
+              audience === 'business'
+                ? 'border-purple-400/60 bg-purple-400/10 shadow-lg'
+                : 'border-white/10 bg-white/5 hover:border-purple-300/40 hover:bg-purple-300/10'
+            }`}
+          >
+            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Analytics Portal</p>
+            <p className="mt-1 text-2xl font-bold text-white">I’m a business</p>
+            <p className="mt-2 text-sm text-slate-300">Access consumer insights, referral leaders, and integration tooling.</p>
+          </button>
+        </div>
+      </section>
 
-        <form onSubmit={handleWaitlist} className="flex flex-col gap-4 items-center" encType="multipart/form-data">
+      {/* WAITLIST SIGNUP */}
+      {audience === 'shopper' && (
+        <section className="w-full max-w-lg mb-16">
+          <h2 className="text-xl font-extrabold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent text-center mb-4 drop-shadow">
+            Join the Waitlist for Airdrops, Rewards & Early Access
+          </h2>
+
+          <form onSubmit={handleWaitlist} className="flex flex-col gap-4 items-center" encType="multipart/form-data">
                     <span className="text-sm text-slate-300 mb-[-8px]">Upload a photo of your receipt</span>
 
-          <input
+            <input
             type="email"
             required
             placeholder="Enter your email"
@@ -193,7 +226,7 @@ export default function LandingPage() {
             autoComplete="email"
           />
 
-          <input
+            <input
             type="password"
             required
             placeholder="Create a password (for wallet recovery)"
@@ -229,16 +262,16 @@ export default function LandingPage() {
             )}
           </div>
 
-          <button
+            <button
             type="submit"
             disabled={waitlistSuccess || loading}
             className="px-6 py-3 rounded-lg bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 text-white font-extrabold shadow-lg hover:scale-105 disabled:opacity-40 transition"
           >
             {loading ? "Joining..." : waitlistSuccess ? "Joined!" : "Get Early Access"}
           </button>
-        </form>
+          </form>
 
-        {waitlistSuccess && (
+          {waitlistSuccess && (
           <div className="mt-6 w-full max-w-lg bg-gradient-to-br from-[#0B0C10] via-[#1F2235] to-[#232946] border border-cyan-500/60 text-white p-6 rounded-2xl shadow-2xl flex flex-col items-center">
             <p className="font-extrabold text-2xl mb-2 bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow">🎉 Success! Your receipt was uploaded and you’re on the waitlist.</p>
             <p className="mb-4 text-slate-200">Watch your inbox for updates and rewards.</p>
@@ -250,8 +283,42 @@ export default function LandingPage() {
                 className="block my-2 text-cyan-400 underline break-all hover:text-cyan-300 text-base"
               >
                 {referralLink}
-              </a>
             )}
+          </section>
+        )}
+
+        {audience === 'business' && (
+          <section className="w-full max-w-3xl mb-16">
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="rounded-2xl border border-purple-500/30 bg-purple-500/10 p-6 shadow-lg">
+                <h3 className="text-xl font-semibold text-white mb-2">Request Analytics Access</h3>
+                <p className="text-sm text-slate-200 mb-4">
+                  Share your business details to connect POS data, unlock receipt analytics, and automate token rewards for loyal shoppers.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push('/business/signup')}
+                  className="w-full rounded-lg bg-gradient-to-r from-purple-400 via-blue-500 to-cyan-400 px-4 py-3 font-semibold text-black shadow-lg hover:brightness-105"
+                >
+                  Business Signup
+                </button>
+              </div>
+              <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-6 shadow-lg">
+                <h3 className="text-xl font-semibold text-white mb-2">Existing Partner Login</h3>
+                <p className="text-sm text-slate-200 mb-4">
+                  Already have portal credentials? Review referral leaders, receipt performance, and integration status in minutes.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push('/business/login')}
+                  className="w-full rounded-lg bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 px-4 py-3 font-semibold text-black shadow-lg hover:brightness-105"
+                >
+                  Business Login
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
             {/* Custom Referral Code Section */}
             {!customCodeSuccess && (
               <form
@@ -321,7 +388,7 @@ export default function LandingPage() {
                 if (!authenticated) {
                   await login();
                 }
-                router.push("/dashboard");
+                router.push("/dashboard?tab=balances");
               }}
             >
               Login & Go to Dashboard

@@ -1,12 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import WebApp from '@twa-dev/sdk';
 import dynamic from 'next/dynamic';
 import './telegram.css';
 
 // Dynamic import to avoid SSR issues
 const CameraCapture = dynamic(() => import('../components/CameraCapture'), { ssr: false });
+
+interface TelegramProduct {
+  id: string;
+  name: string;
+  description: string;
+  price_stars: number;
+  price_usd: number;
+  product_key: string;
+}
 
 export default function TelegramInner() {
   // -----------------------------
@@ -16,8 +25,7 @@ export default function TelegramInner() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
   const [showShop, setShowShop] = useState<boolean>(false)
-  const [products, setProducts] = useState<any[]>([])
-  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [products, setProducts] = useState<TelegramProduct[]>([])
 
   // -----------------------------
   // 2. TELEGRAM INITIALIZATION & MULTI-TENANT WALLET GENERATION
@@ -68,7 +76,7 @@ export default function TelegramInner() {
             // Optional: Store wallet address in Telegram local storage for quick access
             try {
               WebApp.CloudStorage?.setItem('wallet_address', walletData.wallet.address)
-            } catch (e) {
+            } catch {
               // CloudStorage not available, no problem
             }
           } else {
@@ -93,8 +101,8 @@ export default function TelegramInner() {
     async function loadProducts() {
       try {
         const res = await fetch('/api/telegram/products')
-        const data = await res.json()
-        if (data.products) {
+        const data = await res.json() as { products?: TelegramProduct[] }
+        if (Array.isArray(data.products)) {
           setProducts(data.products)
         }
       } catch (error) {
@@ -142,8 +150,9 @@ export default function TelegramInner() {
       const rwtEarned = ocr.rwt_earned || 0
       alert(`✅ Success! Receipt processed.\n🏪 Brand: ${brand}\n💰 RWT Earned: ${rwtEarned}`)
 
-    } catch (error: any) {
-      console.error("Upload error:", error)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      console.error("Upload error:", message)
       alert("Something went wrong. Please try again.")
     } finally {
       setLoading(false)
@@ -166,7 +175,6 @@ export default function TelegramInner() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           product_key: productKey,
-          user_email: userEmail,
           telegram_id: telegramId,
           wallet_address: walletAddress
         })
@@ -192,8 +200,9 @@ export default function TelegramInner() {
           alert('Payment failed. Please try again.')
         }
       })
-    } catch (error) {
-      console.error('Purchase error:', error)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      console.error('Purchase error:', message)
       alert('Failed to initiate purchase')
     }
   }
