@@ -3,6 +3,7 @@ import Providers from '../lib/privyProvider'
 import Navigation from './components/Navigation'
 import Footer from './components/Footer'
 import CookieConsent from './components/CookieConsent'
+import QueryProvider from '../lib/queryClientProvider'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -14,14 +15,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="bg-gradient-to-br from-[#0B0C10] via-[#181A2A] to-[#232946] text-white min-h-screen flex flex-col">
-        <Providers>
-          <Navigation />
-          <div className="flex-1 flex flex-col">
-            {children}
-          </div>
-          <Footer />
-          <CookieConsent />
-        </Providers>
+        <QueryProvider>
+          <Providers>
+            <Navigation />
+            <div className="flex-1 flex flex-col">
+              {children}
+            </div>
+            <Footer />
+            <CookieConsent />
+          </Providers>
+        </QueryProvider>
       </body>
     </html>
   )

@@ -79,13 +79,53 @@ export async function POST(req: Request) {
     }
 
     const apiKey = req.headers.get("x-api-key");
-    const validApiKey = process.env.BUSINESS_API_KEY;
+    const fallbackApiKey = process.env.BUSINESS_API_KEY;
 
-    if (!apiKey || apiKey !== validApiKey) {
+    if (!apiKey) {
       return NextResponse.json(
-        { success: false, error: "Unauthorized: Invalid or missing API key" },
+        { success: false, error: "Unauthorized: Missing API key" },
         { status: 401 }
       );
+    }
+
+    // Validate per-business access with expiry + quota
+    const { data: access, error: accessError } = await supabaseService
+      .from("business_access")
+      .select("*")
+      .eq("api_key", apiKey)
+      .maybeSingle();
+
+    const now = new Date();
+    const active =
+      access &&
+      access.status === "active" &&
+      (!access.starts_at || new Date(access.starts_at) <= now) &&
+      (!access.expires_at || new Date(access.expires_at) >= now) &&
+      (!access.max_calls || Number(access.call_count || 0) < Number(access.max_calls));
+
+    if (accessError) {
+      console.error("business_access lookup failed", accessError);
+    }
+
+    if (!active && apiKey !== fallbackApiKey) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized: Invalid, expired, or over quota API key" },
+        { status: 401 }
+      );
+    }
+
+    if (access?.id) {
+      try {
+        await supabaseService
+          .from("business_access")
+          .update({
+            call_count: Number(access.call_count || 0) + 1,
+            last_used_at: now.toISOString(),
+          })
+          .eq("id", access.id);
+      } catch (err) {
+        console.warn("business_access usage update failed", err);
+      }
     }
 
     const event = await req.json();

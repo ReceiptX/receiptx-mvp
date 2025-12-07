@@ -3,23 +3,36 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const loginSchema = z.object({
+  password: z.string().min(8, 'Passphrase must be at least 8 characters'),
+});
+
+type LoginForm = z.infer<typeof loginSchema>;
 
 export default function BusinessLoginPage() {
   const router = useRouter();
-  const [password, setPassword] = useState('');
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setSubmitting(true);
-    setError(null);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { password: '' },
+  });
 
+  const onSubmit = async (values: LoginForm) => {
+    setError(null);
     try {
       const res = await fetch('/api/business/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify(values),
       });
 
       const data = await res.json();
@@ -31,8 +44,6 @@ export default function BusinessLoginPage() {
       router.replace('/business/dashboard');
     } catch (err: any) {
       setError(err?.message || 'Unexpected error');
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -53,18 +64,18 @@ export default function BusinessLoginPage() {
           Enter the portal passphrase shared with your team to access the proprietary business API analytics.
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <label className="flex flex-col gap-2">
             <span className="text-sm text-slate-200">Portal passphrase</span>
             <input
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              {...register('password')}
               className="rounded-lg bg-black/40 border border-white/10 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
               placeholder="••••••••••"
               autoComplete="current-password"
               required
             />
+            {errors.password && <span className="text-xs text-red-400">{errors.password.message}</span>}
           </label>
 
           {error && (
@@ -75,10 +86,10 @@ export default function BusinessLoginPage() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={isSubmitting}
             className="w-full rounded-lg bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 px-4 py-3 font-semibold text-white shadow-lg hover:brightness-105 disabled:opacity-60"
           >
-            {submitting ? 'Signing in...' : 'Access dashboard'}
+            {isSubmitting ? 'Signing in...' : 'Access dashboard'}
           </button>
         </form>
 

@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useCallback } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 interface Redemption {
   id: string;
@@ -38,7 +38,6 @@ interface RedemptionSummary {
 export default function MyRedemptions() {
   const { authenticated, user } = usePrivy();
   const [redemptions, setRedemptions] = useState<Redemption[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [summary, setSummary] = useState<RedemptionSummary>({
     total_spent: 0,
@@ -46,12 +45,14 @@ export default function MyRedemptions() {
     used_coupons: 0,
   });
 
+  const userIdentifier =
+    user?.email?.address || user?.telegram?.telegramUserId || user?.wallet?.address || null;
+
   const fetchRedemptions = useCallback(async () => {
-    if (!user) {
-      return;
+    if (!userIdentifier) {
+      return { redemptions: [], summary };
     }
 
-    setLoading(true);
     try {
       const params = new URLSearchParams();
 
@@ -64,23 +65,25 @@ export default function MyRedemptions() {
       const res = await fetch(`/api/rewards/my-redemptions?${params.toString()}`);
       const data = await res.json();
 
-      if (data.success) {
-        setRedemptions(data.redemptions as Redemption[]);
-        setSummary(data.summary as RedemptionSummary);
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to load redemptions');
       }
+
+      setRedemptions(data.redemptions as Redemption[]);
+      setSummary(data.summary as RedemptionSummary);
+      return data as { redemptions: Redemption[]; summary: RedemptionSummary };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error fetching redemptions.';
       console.error('Error fetching redemptions:', message);
-    } finally {
-      setLoading(false);
     }
-  }, [selectedStatus, user]);
+    return { redemptions, summary };
+  }, [selectedStatus, user, userIdentifier, summary]);
 
-  useEffect(() => {
-    if (authenticated && user) {
-      void fetchRedemptions();
-    }
-  }, [authenticated, fetchRedemptions, user]);
+  const { isLoading } = useQuery({
+    queryKey: ['my-redemptions', userIdentifier, selectedStatus],
+    enabled: authenticated && !!userIdentifier,
+    queryFn: fetchRedemptions,
+  });
 
   if (!authenticated) {
     return (
