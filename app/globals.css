@@ -76,3 +76,21 @@ input:focus, textarea:focus, button:focus { outline: 3px solid rgba(0,230,255,0.
 
 /* Ensure body uses the Rx theme by default */
 body { background: var(--rx-bg-0); color: var(--rx-text); }
+
+/* Telegram webview layout helpers */
+.telegram-main {
+  background-color: #0B0C10 !important;
+  color: #FFFFFF !important;
+  min-height: 100dvh !important;
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px);
+  overflow-y: auto;
+}
+
+html,
+body {
+  min-height: 100dvh;
+  height: 100%;
+  overflow-y: auto;
+  background-color: #0B0C10 !important;
+  margin: 0;
+}

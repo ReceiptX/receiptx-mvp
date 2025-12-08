@@ -28,6 +28,46 @@ interface Reward {
   reward_categories?: Category;
 }
 
+type LockedPreview = {
+  id: string;
+  title: string;
+  description: string;
+  milestone: string;
+  reward: string;
+  accent: string;
+  icon: string;
+};
+
+const LOCKED_PREVIEWS: LockedPreview[] = [
+  {
+    id: 'receipt-streak',
+    title: 'Receipt Warrior Drop',
+    description: 'Collect brand-tagged receipts to unlock an exclusive Warrior NFT and lifetime multiplier boosts.',
+    milestone: 'Log 10 qualifying receipts',
+    reward: '+150 bonus RWT & Warrior NFT',
+    accent: 'from-amber-500/80 via-orange-500/60 to-pink-500/70',
+    icon: '⚔️',
+  },
+  {
+    id: 'tier-boost',
+    title: 'Tier Boost Bundle',
+    description: 'Redeem a bundle that jumps you to the next staking tier without locking extra AIA.',
+    milestone: 'Stake 1,000 AIA',
+    reward: 'Instant Silver tier + 2x receipt multiplier for 7 days',
+    accent: 'from-cyan-500/80 via-blue-500/70 to-purple-600/70',
+    icon: '🚀',
+  },
+  {
+    id: 'brand-credit',
+    title: 'Featured Brand Credit',
+    description: 'Use your RWT for a real-world discount with our launch partner storefronts.',
+    milestone: 'Refer 3 friends who upload receipts',
+    reward: '$25 partner credit',
+    accent: 'from-emerald-500/80 via-teal-500/70 to-cyan-500/70',
+    icon: '🎁',
+  },
+];
+
 export default function RewardsMarketplace() {
   const { authenticated, user } = usePrivy();
   const [rewards, setRewards] = useState<Reward[]>([]);
@@ -235,7 +275,7 @@ export default function RewardsMarketplace() {
           {loading ? (
             <p className="text-gray-300">Loading rewards...</p>
           ) : displayRewards.length === 0 ? (
-            <p className="text-gray-300">No rewards found</p>
+            <EmptyRewardsState previews={LOCKED_PREVIEWS} isAuthenticated={authenticated} />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayRewards.map((reward) => (
@@ -341,6 +381,66 @@ function RewardCard({
           ? '⏳ Redeeming...'
           : '✅ Redeem Now'}
       </button>
+    </div>
+  );
+}
+
+function EmptyRewardsState({ previews, isAuthenticated }: { previews: LockedPreview[]; isAuthenticated: boolean }) {
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-3xl p-10 text-white backdrop-blur">
+      <div className="grid gap-8 lg:grid-cols-[1.2fr_1fr] items-center">
+        <div>
+          <h3 className="text-3xl font-bold mb-3">Rewards vault is warming up</h3>
+          <p className="text-gray-200 mb-6 max-w-xl">
+            We are syncing launch partner perks right now. Keep scanning receipts and staking AIA so you are first in line when the vault opens.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/receipts/scan"
+              className="px-5 py-3 rounded-lg bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-black font-semibold hover:brightness-110 transition"
+            >
+              Scan a receipt
+            </Link>
+            {!isAuthenticated && (
+              <Link
+                href="/landing"
+                className="px-5 py-3 rounded-lg border border-white/30 text-white hover:bg-white/10 transition"
+              >
+                Create your wallet
+              </Link>
+            )}
+          </div>
+        </div>
+        <div className="space-y-4">
+          {previews.map((preview) => (
+            <LockedRewardPreview key={preview.id} preview={preview} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LockedRewardPreview({ preview }: { preview: LockedPreview }) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-white/5 p-6">
+      <div className={`absolute inset-0 bg-gradient-to-r ${preview.accent} opacity-40`} aria-hidden="true" />
+      <div className="relative flex items-start gap-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-black/40 text-2xl">
+          {preview.icon}
+        </div>
+        <div className="space-y-2">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-cyan-200/80">Locked Preview</p>
+            <h4 className="text-xl font-semibold text-white">{preview.title}</h4>
+          </div>
+          <p className="text-sm text-gray-200/90">{preview.description}</p>
+          <div className="flex flex-wrap gap-3 text-sm">
+            <span className="rounded-full bg-black/50 px-3 py-1 text-cyan-200">{preview.milestone}</span>
+            <span className="rounded-full bg-white/10 px-3 py-1 text-white/90">{preview.reward}</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
